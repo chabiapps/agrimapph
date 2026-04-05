@@ -20,48 +20,57 @@ export type Database = {
           commodity: string | null
           created_at: string
           id: string
+          is_verified: boolean
           lat: number
           lng: number
           municipality: string | null
+          notes: string | null
           price: number | null
           province: string | null
           region: string | null
+          reported_by: string | null
           season: string | null
           status: string
           updated_at: string
-          volume: number | null
+          volume: string | null
         }
         Insert: {
           barangay?: string | null
           commodity?: string | null
           created_at?: string
           id?: string
+          is_verified?: boolean
           lat: number
           lng: number
           municipality?: string | null
+          notes?: string | null
           price?: number | null
           province?: string | null
           region?: string | null
+          reported_by?: string | null
           season?: string | null
           status?: string
           updated_at?: string
-          volume?: number | null
+          volume?: string | null
         }
         Update: {
           barangay?: string | null
           commodity?: string | null
           created_at?: string
           id?: string
+          is_verified?: boolean
           lat?: number
           lng?: number
           municipality?: string | null
+          notes?: string | null
           price?: number | null
           province?: string | null
           region?: string | null
+          reported_by?: string | null
           season?: string | null
           status?: string
           updated_at?: string
-          volume?: number | null
+          volume?: string | null
         }
         Relationships: []
       }
