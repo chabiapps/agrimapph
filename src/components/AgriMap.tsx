@@ -13,7 +13,7 @@ interface AgriReport {
   barangay: string | null;
   commodity: string | null;
   price: number | null;
-  volume: number | null;
+  volume: string | null;
   season: string | null;
 }
 

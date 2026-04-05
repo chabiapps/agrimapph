@@ -1,0 +1,6 @@
+
+ALTER TABLE public.agri_reports 
+  ALTER COLUMN volume TYPE TEXT USING volume::TEXT,
+  ADD COLUMN IF NOT EXISTS reported_by TEXT,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT false;
