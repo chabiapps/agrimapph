@@ -1,16 +1,51 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import AgriMap from "@/components/AgriMap";
+import ReportPanel from "@/components/ReportPanel";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+interface AgriReport {
+  id: string;
+  lat: number;
+  lng: number;
+  status: string;
+  region: string | null;
+  province: string | null;
+  municipality: string | null;
+  barangay: string | null;
+  commodity: string | null;
+  price: number | null;
+  volume: number | null;
+  season: string | null;
+}
+
+const Index = () => {
+  const [reports, setReports] = useState<AgriReport[]>([]);
+  const [selected, setSelected] = useState<AgriReport | null>(null);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      const { data, error } = await supabase
+        .from("agri_reports")
+        .select("id, lat, lng, status, region, province, municipality, barangay, commodity, price, volume, season");
+      if (!error && data) {
+        setReports(data);
+      }
+    };
+    fetchReports();
+  }, []);
+
+  const handlePinClick = useCallback((report: AgriReport) => {
+    setSelected(report);
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="relative h-screen w-screen overflow-hidden">
+      <AgriMap reports={reports} onPinClick={handlePinClick} />
+      {selected && (
+        <ReportPanel report={selected} onClose={() => setSelected(null)} />
+      )}
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;

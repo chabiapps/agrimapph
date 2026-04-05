@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agri_reports: {
+        Row: {
+          barangay: string | null
+          commodity: string | null
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          municipality: string | null
+          price: number | null
+          province: string | null
+          region: string | null
+          season: string | null
+          status: string
+          updated_at: string
+          volume: number | null
+        }
+        Insert: {
+          barangay?: string | null
+          commodity?: string | null
+          created_at?: string
+          id?: string
+          lat: number
+          lng: number
+          municipality?: string | null
+          price?: number | null
+          province?: string | null
+          region?: string | null
+          season?: string | null
+          status?: string
+          updated_at?: string
+          volume?: number | null
+        }
+        Update: {
+          barangay?: string | null
+          commodity?: string | null
+          created_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          municipality?: string | null
+          price?: number | null
+          province?: string | null
+          region?: string | null
+          season?: string | null
+          status?: string
+          updated_at?: string
+          volume?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
