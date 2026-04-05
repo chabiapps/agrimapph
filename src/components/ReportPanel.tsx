@@ -64,7 +64,7 @@ const ReportPanel = ({ report, onClose }: ReportPanelProps) => {
         <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mt-5 mb-2">Market Data</p>
         <DetailRow label="Commodity" value={report.commodity} />
         <DetailRow label="Price" value={report.price != null ? `₱${Number(report.price).toLocaleString()}` : null} />
-        <DetailRow label="Volume" value={report.volume != null ? `${Number(report.volume).toLocaleString()} kg` : null} />
+        <DetailRow label="Volume" value={report.volume} />
         <DetailRow label="Season" value={report.season} />
       </div>
     </div>
