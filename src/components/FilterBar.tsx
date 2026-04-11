@@ -1,4 +1,5 @@
-import { Search } from "lucide-react";
+import { Search, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -16,6 +17,7 @@ interface FilterBarProps {
   status: string;
   onStatusChange: (v: string) => void;
   commodities: string[];
+  onExportCsv: () => void;
 }
 
 const FilterBar = ({
@@ -23,6 +25,7 @@ const FilterBar = ({
   commodity, onCommodityChange,
   status, onStatusChange,
   commodities,
+  onExportCsv,
 }: FilterBarProps) => (
   <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] flex flex-wrap items-center gap-2 bg-card/90 backdrop-blur-md rounded-lg border border-border shadow-lg p-2 w-[95vw] max-w-xl">
     <div className="relative flex-1 min-w-[120px]">
@@ -56,6 +59,10 @@ const FilterBar = ({
         <SelectItem value="balanced">Balanced</SelectItem>
       </SelectContent>
     </Select>
+    <Button variant="outline" size="sm" className="h-9 text-sm gap-1.5" onClick={onExportCsv}>
+      <Download className="h-3.5 w-3.5" />
+      CSV
+    </Button>
   </div>
 );
 

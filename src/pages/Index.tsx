@@ -66,6 +66,23 @@ const Index = () => {
     setSelected(report);
   }, []);
 
+  const handleExportCsv = useCallback(() => {
+    const headers = ["Region","Province","Municipality","Barangay","Commodity","Season","Volume","Status","Price"];
+    const rows = filtered.map((r) => [
+      r.region ?? "", r.province ?? "", r.municipality ?? "", r.barangay ?? "",
+      r.commodity ?? "", r.season ?? "", r.volume ?? "", r.status,
+      r.price != null ? String(r.price) : "",
+    ].map((v) => `"${v.replace(/"/g, '""')}"`).join(","));
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "agri_reports.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [filtered]);
+
   return (
     <div className="relative h-screen w-screen overflow-hidden">
       <ViewToggle view={view} onChange={setView} />
@@ -77,6 +94,7 @@ const Index = () => {
         status={status}
         onStatusChange={setStatus}
         commodities={commodities}
+        onExportCsv={handleExportCsv}
       />
       {view === "map" ? (
         <>
