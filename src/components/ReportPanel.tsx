@@ -1,4 +1,5 @@
-import { X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { X, ChevronRight, ChevronLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface AgriReport {
@@ -17,55 +18,202 @@ interface AgriReport {
 }
 
 interface ReportPanelProps {
-  report: AgriReport;
+  reports: AgriReport[];
+  initialReport: AgriReport;
   onClose: () => void;
 }
 
-const statusStyles: Record<string, string> = {
+const statusBadge: Record<string, string> = {
   surplus: "bg-green-500/15 text-green-700 border-green-500/30",
   deficit: "bg-red-500/15 text-red-700 border-red-500/30",
   balanced: "bg-yellow-500/15 text-yellow-700 border-yellow-500/30",
 };
 
-const DetailRow = ({ label, value }: { label: string; value: string | number | null }) => (
-  <div className="flex justify-between items-center py-2.5 border-b border-border/50 last:border-0">
-    <span className="text-sm text-muted-foreground font-medium">{label}</span>
-    <span className="text-sm font-semibold text-foreground">{value ?? "—"}</span>
-  </div>
-);
+type DrillLevel = "region" | "province" | "municipality" | "barangay";
+const levels: DrillLevel[] = ["region", "province", "municipality", "barangay"];
+const levelLabels: Record<DrillLevel, string> = {
+  region: "Region",
+  province: "Province",
+  municipality: "Municipality",
+  barangay: "Barangay",
+};
 
-const ReportPanel = ({ report, onClose }: ReportPanelProps) => {
+function SummaryBar({ items }: { items: AgriReport[] }) {
+  const counts = useMemo(() => {
+    const c = { surplus: 0, deficit: 0, balanced: 0 };
+    items.forEach((r) => {
+      if (r.status in c) c[r.status as keyof typeof c]++;
+    });
+    return c;
+  }, [items]);
+
+  return (
+    <div className="flex items-center gap-2 text-xs mb-3">
+      <span className="font-semibold text-muted-foreground">{items.length} report{items.length !== 1 ? "s" : ""}</span>
+      <Badge className={`${statusBadge.surplus} text-[10px] px-1.5 py-0`}>{counts.surplus} surplus</Badge>
+      <Badge className={`${statusBadge.deficit} text-[10px] px-1.5 py-0`}>{counts.deficit} deficit</Badge>
+      <Badge className={`${statusBadge.balanced} text-[10px] px-1.5 py-0`}>{counts.balanced} balanced</Badge>
+    </div>
+  );
+}
+
+const ReportPanel = ({ reports, initialReport, onClose }: ReportPanelProps) => {
+  const initialRegion = initialReport.region;
+
+  // drill path: e.g. { region: "Region III", province: "Pampanga" }
+  const [path, setPath] = useState<Partial<Record<DrillLevel, string>>>({
+    region: initialRegion ?? undefined,
+  });
+
+  // Current depth
+  const currentDepth = useMemo(() => {
+    for (let i = levels.length - 1; i >= 0; i--) {
+      if (path[levels[i]]) return i + 1;
+    }
+    return 0;
+  }, [path]);
+
+  const currentLevel: DrillLevel = levels[Math.min(currentDepth, levels.length - 1)];
+
+  // Filter reports matching the current path
+  const filtered = useMemo(() => {
+    return reports.filter((r) => {
+      for (const [key, val] of Object.entries(path)) {
+        if (r[key as keyof AgriReport] !== val) return false;
+      }
+      return true;
+    });
+  }, [reports, path]);
+
+  // Group by current level's field
+  const groups = useMemo(() => {
+    if (currentDepth >= levels.length) return null; // at barangay level, show individual records
+    const field = levels[currentDepth];
+    const map = new Map<string, AgriReport[]>();
+    filtered.forEach((r) => {
+      const key = (r[field as keyof AgriReport] as string) || "Unknown";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(r);
+    });
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [filtered, currentDepth]);
+
+  const breadcrumbs = useMemo(() => {
+    const crumbs: { label: string; level: DrillLevel; value: string }[] = [];
+    for (let i = 0; i < currentDepth && i < levels.length; i++) {
+      const l = levels[i];
+      if (path[l]) crumbs.push({ label: levelLabels[l], level: l, value: path[l]! });
+    }
+    return crumbs;
+  }, [path, currentDepth]);
+
+  const goBack = () => {
+    if (currentDepth <= 1) return;
+    const newPath = { ...path };
+    delete newPath[levels[currentDepth - 1]];
+    setPath(newPath);
+  };
+
+  const drillInto = (level: DrillLevel, value: string) => {
+    setPath((prev) => ({ ...prev, [level]: value }));
+  };
+
+  const goToBreadcrumb = (depth: number) => {
+    const newPath: Partial<Record<DrillLevel, string>> = {};
+    for (let i = 0; i <= depth; i++) {
+      const l = levels[i];
+      if (path[l]) newPath[l] = path[l];
+    }
+    setPath(newPath);
+  };
+
   return (
     <div className="absolute top-0 right-0 h-full w-80 bg-card/95 backdrop-blur-md border-l border-border shadow-2xl z-[1000] flex flex-col animate-in slide-in-from-right duration-300">
-      <div className="flex items-center justify-between p-5 border-b border-border">
-        <div>
-          <h2 className="text-base font-bold text-card-foreground tracking-tight">
-            {report.commodity || "Unknown Commodity"}
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center gap-2 min-w-0">
+          {currentDepth > 1 && (
+            <button onClick={goBack} className="rounded-full p-1 hover:bg-muted transition-colors shrink-0">
+              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
+          <h2 className="text-sm font-bold text-card-foreground truncate">
+            {currentDepth < levels.length ? levelLabels[currentLevel] : "Records"}
           </h2>
-          <Badge className={`mt-1.5 text-xs capitalize ${statusStyles[report.status] || ""}`}>
-            {report.status}
-          </Badge>
         </div>
-        <button
-          onClick={onClose}
-          className="rounded-full p-1.5 hover:bg-muted transition-colors"
-        >
+        <button onClick={onClose} className="rounded-full p-1.5 hover:bg-muted transition-colors shrink-0">
           <X className="h-4 w-4 text-muted-foreground" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-5 space-y-1">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-2">Location</p>
-        <DetailRow label="Region" value={report.region} />
-        <DetailRow label="Province" value={report.province} />
-        <DetailRow label="Municipality" value={report.municipality} />
-        <DetailRow label="Barangay" value={report.barangay} />
+      {/* Breadcrumbs */}
+      {breadcrumbs.length > 0 && (
+        <div className="flex items-center gap-1 px-4 py-2 text-xs text-muted-foreground overflow-x-auto border-b border-border/50">
+          {breadcrumbs.map((c, i) => (
+            <span key={c.level} className="flex items-center gap-1 shrink-0">
+              {i > 0 && <ChevronRight className="h-3 w-3" />}
+              <button
+                onClick={() => goToBreadcrumb(i)}
+                className="hover:text-foreground transition-colors truncate max-w-[100px]"
+                title={c.value}
+              >
+                {c.value}
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
 
-        <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mt-5 mb-2">Market Data</p>
-        <DetailRow label="Commodity" value={report.commodity} />
-        <DetailRow label="Price" value={report.price != null ? `₱${Number(report.price).toLocaleString()}` : null} />
-        <DetailRow label="Volume" value={report.volume} />
-        <DetailRow label="Season" value={report.season} />
+      {/* Summary */}
+      <div className="px-4 pt-3">
+        <SummaryBar items={filtered} />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
+        {groups ? (
+          <div className="space-y-1">
+            {groups.map(([name, items]) => (
+              <button
+                key={name}
+                onClick={() => drillInto(levels[currentDepth], name)}
+                className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted/60 transition-colors text-left group"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{name}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-[10px] text-green-600 font-medium">{items.filter((r) => r.status === "surplus").length}S</span>
+                    <span className="text-[10px] text-red-600 font-medium">{items.filter((r) => r.status === "deficit").length}D</span>
+                    <span className="text-[10px] text-yellow-600 font-medium">{items.filter((r) => r.status === "balanced").length}B</span>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+              </button>
+            ))}
+          </div>
+        ) : (
+          /* Individual records at barangay level */
+          <div className="space-y-3">
+            {filtered.map((r) => (
+              <div key={r.id} className="rounded-lg border border-border p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-foreground">{r.commodity || "Unknown"}</span>
+                  <Badge className={`text-[10px] capitalize ${statusBadge[r.status] || ""}`}>{r.status}</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <span className="text-muted-foreground">Price</span>
+                  <span className="font-medium text-right">{r.price != null ? `₱${Number(r.price).toLocaleString()}` : "—"}</span>
+                  <span className="text-muted-foreground">Volume</span>
+                  <span className="font-medium text-right">{r.volume ?? "—"}</span>
+                  <span className="text-muted-foreground">Season</span>
+                  <span className="font-medium text-right">{r.season ?? "—"}</span>
+                  <span className="text-muted-foreground">Barangay</span>
+                  <span className="font-medium text-right">{r.barangay ?? "—"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

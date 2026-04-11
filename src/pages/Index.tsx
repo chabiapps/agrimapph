@@ -82,7 +82,7 @@ const Index = () => {
         <>
           <AgriMap reports={filtered} onPinClick={handlePinClick} />
           {selected && (
-            <ReportPanel report={selected} onClose={() => setSelected(null)} />
+            <ReportPanel reports={filtered} initialReport={selected} onClose={() => setSelected(null)} />
           )}
         </>
       ) : (
