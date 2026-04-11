@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AgriMap from "@/components/AgriMap";
 import ReportPanel from "@/components/ReportPanel";
+import ViewToggle from "@/components/ViewToggle";
+import ReportsTable from "@/components/ReportsTable";
 
 interface AgriReport {
   id: string;
@@ -21,6 +23,7 @@ interface AgriReport {
 const Index = () => {
   const [reports, setReports] = useState<AgriReport[]>([]);
   const [selected, setSelected] = useState<AgriReport | null>(null);
+  const [view, setView] = useState<"map" | "table">("map");
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -40,9 +43,18 @@ const Index = () => {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      <AgriMap reports={reports} onPinClick={handlePinClick} />
-      {selected && (
-        <ReportPanel report={selected} onClose={() => setSelected(null)} />
+      <ViewToggle view={view} onChange={setView} />
+      {view === "map" ? (
+        <>
+          <AgriMap reports={reports} onPinClick={handlePinClick} />
+          {selected && (
+            <ReportPanel report={selected} onClose={() => setSelected(null)} />
+          )}
+        </>
+      ) : (
+        <div className="pt-14 h-full">
+          <ReportsTable reports={reports} />
+        </div>
       )}
     </div>
   );
