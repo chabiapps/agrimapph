@@ -25,20 +25,22 @@ const statusStyles: Record<string, string> = {
   balanced: "bg-yellow-500/15 text-yellow-700 border-yellow-500/30",
 };
 
-const ReportsTable = ({ reports }: { reports: AgriReport[] }) => (
+const ReportsTable = ({ reports }: { reports: AgriReport[] }) => {
+  const { t } = useLang();
+  return (
   <div className="h-full w-full overflow-auto bg-background p-4">
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Region</TableHead>
-          <TableHead>Province</TableHead>
-          <TableHead>Municipality</TableHead>
-          <TableHead>Barangay</TableHead>
-          <TableHead>Commodity</TableHead>
-          <TableHead>Season</TableHead>
-          <TableHead>Volume</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Price (₱)</TableHead>
+          <TableHead>{t("region")}</TableHead>
+          <TableHead>{t("province")}</TableHead>
+          <TableHead>{t("municipality")}</TableHead>
+          <TableHead>{t("barangay")}</TableHead>
+          <TableHead>{t("commodity")}</TableHead>
+          <TableHead>{t("season")}</TableHead>
+          <TableHead>{t("volume")}</TableHead>
+          <TableHead>{t("status")}</TableHead>
+          <TableHead className="text-right">{t("price")} (₱)</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -53,7 +55,7 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => (
             <TableCell>{r.volume ?? "—"}</TableCell>
             <TableCell>
               <Badge className={`capitalize ${statusStyles[r.status] || ""}`}>
-                {r.status}
+                {t(r.status as TKey) || r.status}
               </Badge>
             </TableCell>
             <TableCell className="text-right">
@@ -64,6 +66,7 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => (
       </TableBody>
     </Table>
   </div>
-);
+  );
+};
 
 export default ReportsTable;

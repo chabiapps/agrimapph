@@ -31,11 +31,11 @@ const statusBadge: Record<string, string> = {
 
 type DrillLevel = "region" | "province" | "municipality" | "barangay";
 const levels: DrillLevel[] = ["region", "province", "municipality", "barangay"];
-const levelLabels: Record<DrillLevel, string> = {
-  region: "Region",
-  province: "Province",
-  municipality: "Municipality",
-  barangay: "Barangay",
+const levelKeys: Record<DrillLevel, TKey> = {
+  region: "region",
+  province: "province",
+  municipality: "municipality",
+  barangay: "barangay",
 };
 
 function SummaryBar({ items }: { items: AgriReport[] }) {
