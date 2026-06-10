@@ -61,12 +61,12 @@ const AgriMap = ({ reports, onPinClick }: AgriMapProps) => {
     reports.forEach((report) => {
       const color = statusColor[report.status] || "#9ca3af";
       L.circleMarker([report.lat, report.lng], {
-        radius: 10,
+        radius: 16,
         fillColor: color,
         color: "#fff",
-        weight: 2,
+        weight: 3,
         opacity: 1,
-        fillOpacity: 0.85,
+        fillOpacity: 0.9,
       })
         .addTo(map)
         .on("click", () => onPinClick(report));
