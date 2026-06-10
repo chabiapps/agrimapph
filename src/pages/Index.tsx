@@ -5,6 +5,7 @@ import ReportPanel from "@/components/ReportPanel";
 import ViewToggle from "@/components/ViewToggle";
 import ReportsTable from "@/components/ReportsTable";
 import FilterBar from "@/components/FilterBar";
+import LanguageToggle from "@/components/LanguageToggle";
 
 interface AgriReport {
   id: string;
@@ -86,6 +87,7 @@ const Index = () => {
   return (
     <div className="relative h-screen w-screen overflow-hidden">
       <ViewToggle view={view} onChange={setView} />
+      <LanguageToggle />
       <FilterBar
         search={search}
         onSearchChange={setSearch}
