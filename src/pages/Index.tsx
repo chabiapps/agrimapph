@@ -87,6 +87,7 @@ const Index = () => {
   return (
     <div className="relative h-screen w-screen overflow-hidden">
       <ViewToggle view={view} onChange={setView} />
+      <LanguageToggle />
       <FilterBar
         search={search}
         onSearchChange={setSearch}
