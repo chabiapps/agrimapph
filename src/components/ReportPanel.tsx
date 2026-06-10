@@ -59,6 +59,7 @@ function SummaryBar({ items }: { items: AgriReport[] }) {
 }
 
 const ReportPanel = ({ reports, initialReport, onClose }: ReportPanelProps) => {
+  const { t } = useLang();
   const initialRegion = initialReport.region;
 
   // drill path: e.g. { region: "Region III", province: "Pampanga" }
