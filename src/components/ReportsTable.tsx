@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
 } from "@/components/ui/table";
+import { useLang, TKey } from "@/lib/i18n";
 
 interface AgriReport {
   id: string;
