@@ -5,6 +5,7 @@ import ReportPanel from "@/components/ReportPanel";
 import ViewToggle from "@/components/ViewToggle";
 import ReportsTable from "@/components/ReportsTable";
 import FilterBar from "@/components/FilterBar";
+import LanguageToggle from "@/components/LanguageToggle";
 
 interface AgriReport {
   id: string;
