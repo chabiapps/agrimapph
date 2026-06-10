@@ -104,7 +104,7 @@ const Index = () => {
           )}
         </>
       ) : (
-        <div className="pt-28 h-full">
+        <div className="pt-32 sm:pt-28 h-full">
           <ReportsTable reports={filtered} />
         </div>
       )}
