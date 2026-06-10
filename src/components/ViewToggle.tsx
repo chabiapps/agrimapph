@@ -11,25 +11,25 @@ const ViewToggle = ({ view, onChange }: ViewToggleProps) => (
     <button
       onClick={() => onChange("map")}
       className={cn(
-        "flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors",
+        "flex items-center gap-2 px-5 min-h-[52px] text-base font-medium transition-colors",
         view === "map"
           ? "bg-primary text-primary-foreground"
           : "text-muted-foreground hover:text-foreground hover:bg-muted"
       )}
     >
-      <Map className="h-4 w-4" />
+      <Map className="h-5 w-5" />
       Map View
     </button>
     <button
       onClick={() => onChange("table")}
       className={cn(
-        "flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors",
+        "flex items-center gap-2 px-5 min-h-[52px] text-base font-medium transition-colors",
         view === "table"
           ? "bg-primary text-primary-foreground"
           : "text-muted-foreground hover:text-foreground hover:bg-muted"
       )}
     >
-      <Table2 className="h-4 w-4" />
+      <Table2 className="h-5 w-5" />
       Table View
     </button>
   </div>
