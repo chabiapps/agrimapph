@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useLang } from "@/lib/i18n";
+import { useLang, type TKey } from "@/lib/i18n";
 
 interface AgriReport {
   id: string;
