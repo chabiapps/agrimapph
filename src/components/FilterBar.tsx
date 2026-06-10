@@ -27,7 +27,7 @@ const FilterBar = ({
   commodities,
   onExportCsv,
 }: FilterBarProps) => (
-  <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] flex flex-wrap items-center gap-2 bg-card/90 backdrop-blur-md rounded-lg border border-border shadow-lg p-2 w-[95vw] max-w-xl">
+  <div className="absolute top-16 sm:top-14 left-1/2 -translate-x-1/2 z-[999] flex flex-wrap items-center gap-2 bg-card/90 backdrop-blur-md rounded-lg border border-border shadow-lg p-2 w-[95vw] max-w-xl">
     <div className="relative flex-1 min-w-[120px]">
       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input

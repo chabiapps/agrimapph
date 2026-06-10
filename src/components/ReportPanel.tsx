@@ -128,7 +128,10 @@ const ReportPanel = ({ reports, initialReport, onClose }: ReportPanelProps) => {
   };
 
   return (
-    <div className="absolute top-0 right-0 h-full w-80 bg-card/95 backdrop-blur-md border-l border-border shadow-2xl z-[1000] flex flex-col animate-in slide-in-from-right duration-300">
+    <div className="absolute z-[1000] bg-card/95 backdrop-blur-md shadow-2xl flex flex-col animate-in duration-300
+      inset-x-0 bottom-0 max-h-[75vh] rounded-t-2xl border-t border-border slide-in-from-bottom
+      sm:inset-x-auto sm:bottom-auto sm:top-0 sm:right-0 sm:h-full sm:max-h-none sm:w-80 sm:rounded-none sm:border-t-0 sm:border-l sm:slide-in-from-right">
+      <div className="sm:hidden mx-auto mt-2 h-1.5 w-12 rounded-full bg-muted shrink-0" />
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-2 min-w-0">
