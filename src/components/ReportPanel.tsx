@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useLang } from "@/lib/i18n";
 
 interface AgriReport {
   id: string;
@@ -102,7 +103,7 @@ const ReportPanel = ({ reports, initialReport, onClose }: ReportPanelProps) => {
     const crumbs: { label: string; level: DrillLevel; value: string }[] = [];
     for (let i = 0; i < currentDepth && i < levels.length; i++) {
       const l = levels[i];
-      if (path[l]) crumbs.push({ label: levelLabels[l], level: l, value: path[l]! });
+      if (path[l]) crumbs.push({ label: t(levelKeys[l]), level: l, value: path[l]! });
     }
     return crumbs;
   }, [path, currentDepth]);
@@ -141,7 +142,7 @@ const ReportPanel = ({ reports, initialReport, onClose }: ReportPanelProps) => {
             </button>
           )}
           <h2 className="text-sm font-bold text-card-foreground truncate">
-            {currentDepth < levels.length ? levelLabels[currentLevel] : "Records"}
+            {currentDepth < levels.length ? t(levelKeys[currentLevel]) : t("records")}
           </h2>
         </div>
         <button onClick={onClose} className="rounded-full p-1.5 hover:bg-muted transition-colors shrink-0">
