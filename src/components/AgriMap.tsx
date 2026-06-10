@@ -48,14 +48,15 @@ const AgriMap = ({ reports, onPinClick }: AgriMapProps) => {
   }, []);
 
   useEffect(() => {
-    if (!mapInstance.current) return;
+    const map = mapInstance.current;
+    if (!map) return;
 
-    // Clear existing markers
-    mapInstance.current.eachLayer((layer) => {
-      if (layer instanceof L.CircleMarker) {
-        mapInstance.current?.removeLayer(layer);
-      }
+    // Clear existing markers (collect first to avoid mutation during iteration)
+    const toRemove: L.Layer[] = [];
+    map.eachLayer((layer) => {
+      if (layer instanceof L.CircleMarker) toRemove.push(layer);
     });
+    toRemove.forEach((l) => map.removeLayer(l));
 
     reports.forEach((report) => {
       const color = statusColor[report.status] || "#9ca3af";
@@ -67,7 +68,7 @@ const AgriMap = ({ reports, onPinClick }: AgriMapProps) => {
         opacity: 1,
         fillOpacity: 0.85,
       })
-        .addTo(mapInstance.current!)
+        .addTo(map)
         .on("click", () => onPinClick(report));
     });
   }, [reports, onPinClick]);
