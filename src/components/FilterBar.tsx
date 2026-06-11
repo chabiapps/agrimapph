@@ -51,17 +51,26 @@ const FilterBar = ({
           ))}
         </SelectContent>
       </Select>
-      <Select value={status} onValueChange={onStatusChange}>
-        <SelectTrigger className="w-[140px] min-h-[52px] text-base">
-          <SelectValue placeholder={t("status")} />
-        </SelectTrigger>
-        <SelectContent className="text-base">
-          <SelectItem value="all" className="min-h-[44px] text-base">{t("allStatus")}</SelectItem>
-          <SelectItem value="surplus" className="min-h-[44px] text-base">{t("surplus")}</SelectItem>
-          <SelectItem value="deficit" className="min-h-[44px] text-base">{t("deficit")}</SelectItem>
-          <SelectItem value="balanced" className="min-h-[44px] text-base">{t("balanced")}</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="flex gap-2 w-full">
+        {([
+          { value: "surplus", label: `${t("surplus")} (Surplus)`, cls: "bg-green-600 hover:bg-green-700 text-white border-green-700", ring: "ring-4 ring-green-300" },
+          { value: "deficit", label: `${t("deficit")} (Deficit)`, cls: "bg-red-600 hover:bg-red-700 text-white border-red-700", ring: "ring-4 ring-red-300" },
+          { value: "balanced", label: `${t("balanced")} (Balanced)`, cls: "bg-yellow-500 hover:bg-yellow-600 text-black border-yellow-600", ring: "ring-4 ring-yellow-300" },
+        ] as const).map((b) => {
+          const isActive = status === b.value;
+          return (
+            <button
+              key={b.value}
+              type="button"
+              onClick={() => onStatusChange(isActive ? "all" : b.value)}
+              className={`flex-1 min-h-[52px] px-2 rounded-md border text-base font-semibold transition-all ${b.cls} ${isActive ? b.ring : "opacity-80"}`}
+              aria-pressed={isActive}
+            >
+              {b.label}
+            </button>
+          );
+        })}
+      </div>
       <Button variant="outline" className="min-h-[52px] text-base gap-2 px-4" onClick={onExportCsv}>
         <Download className="h-5 w-5" />
         {t("csv")}
