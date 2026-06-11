@@ -30,7 +30,7 @@ const FilterBar = ({
 }: FilterBarProps) => {
   const { t } = useLang();
   return (
-    <div className="absolute top-20 sm:top-20 left-1/2 -translate-x-1/2 z-[999] flex flex-wrap items-center gap-2 bg-card/90 backdrop-blur-md rounded-lg border border-border shadow-lg p-3 w-[95vw] max-w-2xl">
+    <div className="flex flex-wrap items-center gap-2 bg-card border-b border-border p-3 w-full">
       <div className="relative flex-1 min-w-[160px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input
