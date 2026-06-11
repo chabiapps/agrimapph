@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AgriMap from "@/components/AgriMap";
-import ReportPanel from "@/components/ReportPanel";
+import PinPopup from "@/components/PinPopup";
 import ViewToggle from "@/components/ViewToggle";
 import ReportsTable from "@/components/ReportsTable";
 import FilterBar from "@/components/FilterBar";
@@ -101,9 +101,7 @@ const Index = () => {
       {view === "map" ? (
         <>
           <AgriMap reports={filtered} onPinClick={handlePinClick} />
-          {selected && (
-            <ReportPanel reports={filtered} initialReport={selected} onClose={() => setSelected(null)} />
-          )}
+          <PinPopup report={selected} onClose={() => setSelected(null)} />
         </>
       ) : (
         <div className="pt-[210px] sm:pt-[200px] h-full">
