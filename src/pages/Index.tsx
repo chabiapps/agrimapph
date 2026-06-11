@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AgriMap from "@/components/AgriMap";
 import PinPopup from "@/components/PinPopup";
-import ViewToggle from "@/components/ViewToggle";
 import ReportsTable from "@/components/ReportsTable";
 import FilterBar from "@/components/FilterBar";
 import LanguageToggle from "@/components/LanguageToggle";
-import ReportFormDialog from "@/components/ReportFormDialog";
+import ReportFormPage from "@/components/ReportFormPage";
+import BottomNav, { Tab } from "@/components/BottomNav";
 
 interface AgriReport {
   id: string;
@@ -27,11 +26,10 @@ interface AgriReport {
 const Index = () => {
   const [reports, setReports] = useState<AgriReport[]>([]);
   const [selected, setSelected] = useState<AgriReport | null>(null);
-  const [view, setView] = useState<"map" | "table">("map");
+  const [tab, setTab] = useState<Tab>("map");
   const [search, setSearch] = useState("");
   const [commodity, setCommodity] = useState("all");
   const [status, setStatus] = useState("all");
-  const [reportOpen, setReportOpen] = useState(false);
 
   const fetchReports = useCallback(async () => {
     const { data, error } = await supabase
@@ -87,40 +85,41 @@ const Index = () => {
   }, [filtered]);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden">
-      <ViewToggle view={view} onChange={setView} />
+    <div className="relative h-screen w-screen overflow-hidden flex flex-col">
       <LanguageToggle />
-      <FilterBar
-        search={search}
-        onSearchChange={setSearch}
-        commodity={commodity}
-        onCommodityChange={setCommodity}
-        status={status}
-        onStatusChange={setStatus}
-        commodities={commodities}
-        onExportCsv={handleExportCsv}
-      />
-      {view === "map" ? (
-        <>
-          <AgriMap reports={filtered} onPinClick={handlePinClick} />
-          <PinPopup report={selected} onClose={() => setSelected(null)} />
-        </>
-      ) : (
-        <div className="pt-[210px] sm:pt-[200px] h-full">
-          <ReportsTable reports={filtered} />
-        </div>
-      )}
 
-      <button
-        onClick={() => setReportOpen(true)}
-        aria-label="Mag-ulat"
-        className="fixed bottom-6 right-6 z-[1000] flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold text-lg pl-5 pr-6 h-16 rounded-full shadow-2xl active:scale-95 transition-transform"
-      >
-        <Plus className="h-7 w-7" strokeWidth={3} />
-        Mag-ulat
-      </button>
+      <main className="flex-1 min-h-0 pb-[72px]">
+        {tab === "map" && (
+          <div className="relative h-full w-full">
+            <AgriMap reports={reports} onPinClick={handlePinClick} />
+            <PinPopup report={selected} onClose={() => setSelected(null)} />
+          </div>
+        )}
 
-      <ReportFormDialog open={reportOpen} onOpenChange={setReportOpen} onSubmitted={fetchReports} />
+        {tab === "list" && (
+          <div className="h-full w-full flex flex-col">
+            <FilterBar
+              search={search}
+              onSearchChange={setSearch}
+              commodity={commodity}
+              onCommodityChange={setCommodity}
+              status={status}
+              onStatusChange={setStatus}
+              commodities={commodities}
+              onExportCsv={handleExportCsv}
+            />
+            <div className="flex-1 min-h-0">
+              <ReportsTable reports={filtered} />
+            </div>
+          </div>
+        )}
+
+        {tab === "report" && (
+          <ReportFormPage onSubmitted={() => { fetchReports(); setTab("map"); }} />
+        )}
+      </main>
+
+      <BottomNav tab={tab} onChange={setTab} />
     </div>
   );
 };
