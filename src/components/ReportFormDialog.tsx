@@ -58,6 +58,19 @@ const ReportFormDialog = ({ open, onOpenChange, onSubmitted }: Props) => {
     }
     setSubmitting(true);
     const d = parsed.data;
+
+    // Ensure we have a session so RLS can tie the row to a user (anonymous is fine).
+    let { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const { data: anon, error: anonErr } = await supabase.auth.signInAnonymously();
+      if (anonErr || !anon.user) {
+        setSubmitting(false);
+        toast({ title: "Submission failed", description: "Hindi makagawa ng session.", variant: "destructive" });
+        return;
+      }
+      user = anon.user;
+    }
+
     const { error } = await supabase.from("agri_reports").insert({
       commodity: d.commodity,
       price: d.price,
@@ -69,6 +82,7 @@ const ReportFormDialog = ({ open, onOpenChange, onSubmitted }: Props) => {
       lat: d.lat,
       lng: d.lng,
       notes: d.notes || null,
+      reported_by: user.id,
     });
     setSubmitting(false);
     if (error) {
