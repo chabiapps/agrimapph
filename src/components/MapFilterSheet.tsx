@@ -31,7 +31,7 @@ const MapFilterSheet = ({
         <button
           type="button"
           aria-label="Filters"
-          className="absolute top-4 right-4 z-[500] h-12 w-12 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent transition-colors"
+          className="absolute top-4 left-4 z-[500] h-12 w-12 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent transition-colors"
         >
           <SlidersHorizontal className="h-5 w-5" />
           {activeCount > 0 && (
