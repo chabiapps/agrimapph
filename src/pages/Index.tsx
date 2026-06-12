@@ -7,6 +7,7 @@ import FilterBar from "@/components/FilterBar";
 import LanguageToggle from "@/components/LanguageToggle";
 import ReportFormPage from "@/components/ReportFormPage";
 import BottomNav, { Tab } from "@/components/BottomNav";
+import MapFilterSheet from "@/components/MapFilterSheet";
 
 interface AgriReport {
   id: string;
