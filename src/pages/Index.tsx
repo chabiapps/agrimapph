@@ -92,7 +92,14 @@ const Index = () => {
       <main className="flex-1 min-h-0 pb-[72px]">
         {tab === "map" && (
           <div className="relative h-full w-full">
-            <AgriMap reports={reports} onPinClick={handlePinClick} />
+            <AgriMap reports={filtered} onPinClick={handlePinClick} />
+            <MapFilterSheet
+              commodity={commodity}
+              onCommodityChange={setCommodity}
+              status={status}
+              onStatusChange={setStatus}
+              commodities={commodities}
+            />
             <PinPopup report={selected} onClose={() => setSelected(null)} />
           </div>
         )}
