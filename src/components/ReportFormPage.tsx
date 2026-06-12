@@ -103,18 +103,21 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
 
   return (
     <div className="h-full w-full overflow-y-auto bg-background">
-      <div className="max-w-lg mx-auto p-4 pb-8">
-        <h1 className="text-3xl font-extrabold mb-6">Mag-ulat</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+      <div className="max-w-lg mx-auto px-4 pt-6 pb-10">
+        <header className="mb-8 pr-12">
+          <h1 className="text-3xl font-extrabold leading-tight">Mag-ulat ng Ani</h1>
+          <p className="text-base text-muted-foreground mt-1">Report Harvest</p>
+        </header>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
             <Label htmlFor="commodity" className="text-base">Produkto / Commodity *</Label>
             <Input id="commodity" value={form.commodity} onChange={(e) => update("commodity", e.target.value)} className="min-h-[52px] text-base" required />
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="price" className="text-base">Presyo (₱/kg) *</Label>
             <Input id="price" type="number" step="0.01" value={form.price} onChange={(e) => update("price", e.target.value)} className="min-h-[52px] text-base" required />
           </div>
-          <div>
+          <div className="space-y-2">
             <Label className="text-base">Kalagayan *</Label>
             <Select value={form.status} onValueChange={(v) => update("status", v)}>
               <SelectTrigger className="min-h-[52px] text-base"><SelectValue /></SelectTrigger>
@@ -125,38 +128,34 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="region" className="text-base">Rehiyon</Label>
-              <Input id="region" value={form.region} onChange={(e) => update("region", e.target.value)} className="min-h-[52px] text-base" />
-            </div>
-            <div>
-              <Label htmlFor="province" className="text-base">Lalawigan</Label>
-              <Input id="province" value={form.province} onChange={(e) => update("province", e.target.value)} className="min-h-[52px] text-base" />
-            </div>
-            <div>
-              <Label htmlFor="municipality" className="text-base">Bayan</Label>
-              <Input id="municipality" value={form.municipality} onChange={(e) => update("municipality", e.target.value)} className="min-h-[52px] text-base" />
-            </div>
-            <div>
-              <Label htmlFor="barangay" className="text-base">Barangay</Label>
-              <Input id="barangay" value={form.barangay} onChange={(e) => update("barangay", e.target.value)} className="min-h-[52px] text-base" />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="region" className="text-base">Rehiyon</Label>
+            <Input id="region" value={form.region} onChange={(e) => update("region", e.target.value)} className="min-h-[52px] text-base" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="lat" className="text-base">Latitude *</Label>
-              <Input id="lat" type="number" step="any" value={form.lat} onChange={(e) => update("lat", e.target.value)} className="min-h-[52px] text-base" required />
-            </div>
-            <div>
-              <Label htmlFor="lng" className="text-base">Longitude *</Label>
-              <Input id="lng" type="number" step="any" value={form.lng} onChange={(e) => update("lng", e.target.value)} className="min-h-[52px] text-base" required />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="province" className="text-base">Lalawigan</Label>
+            <Input id="province" value={form.province} onChange={(e) => update("province", e.target.value)} className="min-h-[52px] text-base" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="municipality" className="text-base">Bayan</Label>
+            <Input id="municipality" value={form.municipality} onChange={(e) => update("municipality", e.target.value)} className="min-h-[52px] text-base" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="barangay" className="text-base">Barangay</Label>
+            <Input id="barangay" value={form.barangay} onChange={(e) => update("barangay", e.target.value)} className="min-h-[52px] text-base" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lat" className="text-base">Latitude *</Label>
+            <Input id="lat" type="number" step="any" value={form.lat} onChange={(e) => update("lat", e.target.value)} className="min-h-[52px] text-base" required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lng" className="text-base">Longitude *</Label>
+            <Input id="lng" type="number" step="any" value={form.lng} onChange={(e) => update("lng", e.target.value)} className="min-h-[52px] text-base" required />
           </div>
           <Button type="button" variant="outline" onClick={useMyLocation} className="w-full min-h-[52px] text-base">
             📍 Gamitin ang aking lokasyon
           </Button>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="notes" className="text-base">Mga Tala</Label>
             <Textarea id="notes" value={form.notes} onChange={(e) => update("notes", e.target.value)} className="text-base" rows={3} />
           </div>
