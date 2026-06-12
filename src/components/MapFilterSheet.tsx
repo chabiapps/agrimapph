@@ -31,11 +31,11 @@ const MapFilterSheet = ({
         <button
           type="button"
           aria-label="Filters"
-          className="absolute top-4 left-4 z-[500] h-12 w-12 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent transition-colors"
+          className="absolute top-[64px] right-4 z-[500] h-12 w-12 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent transition-colors"
         >
           <SlidersHorizontal className="h-5 w-5" />
           {activeCount > 0 && (
-            <span className="absolute -top-1 -left-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
               {activeCount}
             </span>
           )}
