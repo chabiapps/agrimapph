@@ -28,6 +28,7 @@ const Index = () => {
   const [reports, setReports] = useState<AgriReport[]>([]);
   const [selected, setSelected] = useState<AgriReport | null>(null);
   const [tab, setTab] = useState<Tab>("map");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [commodity, setCommodity] = useState("all");
   const [status, setStatus] = useState("all");
