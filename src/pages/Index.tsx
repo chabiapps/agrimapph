@@ -66,6 +66,7 @@ const Index = () => {
   }, [reports, search, commodity, status]);
 
   const handlePinClick = useCallback((report: AgriReport) => {
+    setFilterOpen(false);
     setSelected(report);
   }, []);
 
