@@ -95,13 +95,18 @@ const Index = () => {
           <div className="relative h-full w-full">
             <AgriMap reports={filtered} onPinClick={handlePinClick} />
             <MapFilterSheet
+              open={filterOpen}
+              onOpenChange={(o) => { setFilterOpen(o); if (o) setSelected(null); }}
               commodity={commodity}
               onCommodityChange={setCommodity}
               status={status}
               onStatusChange={setStatus}
               commodities={commodities}
             />
-            <PinPopup report={selected} onClose={() => setSelected(null)} />
+            <PinPopup
+              report={selected}
+              onClose={() => setSelected(null)}
+            />
           </div>
         )}
 
