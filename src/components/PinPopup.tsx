@@ -42,8 +42,10 @@ const PinPopup = ({ report, onClose }: Props) => {
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
         side="bottom"
-        className="rounded-t-2xl p-6 pb-[88px] max-h-[75vh] overflow-y-auto bottom-[72px]"
+        className="rounded-t-2xl p-6 pt-3 max-h-[50vh] overflow-y-auto !bottom-[72px] z-[1100] [&>button]:z-10 [&_~_[data-radix-dialog-overlay]]:z-[1050]"
+        style={{ zIndex: 1100 }}
       >
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-muted-foreground/30" aria-hidden />
         {report && (
           <div className="flex flex-col gap-5">
             <SheetHeader className="text-left space-y-2 pr-8">
