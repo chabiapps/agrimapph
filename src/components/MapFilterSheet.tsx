@@ -10,6 +10,8 @@ import {
 import { useLang } from "@/lib/i18n";
 
 interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   commodity: string;
   onCommodityChange: (v: string) => void;
   status: string;
@@ -18,6 +20,7 @@ interface Props {
 }
 
 const MapFilterSheet = ({
+  open, onOpenChange,
   commodity, onCommodityChange,
   status, onStatusChange,
   commodities,
@@ -26,7 +29,7 @@ const MapFilterSheet = ({
   const activeCount = (commodity !== "all" ? 1 : 0) + (status !== "all" ? 1 : 0);
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
         <button
           type="button"
@@ -35,13 +38,16 @@ const MapFilterSheet = ({
         >
           <SlidersHorizontal className="h-5 w-5" />
           {activeCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
-              {activeCount}
-            </span>
+            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary ring-2 ring-card" />
           )}
         </button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="rounded-t-2xl">
+      <SheetContent
+        side="bottom"
+        className="rounded-t-2xl !bottom-[72px] z-[1100] max-h-[50vh] overflow-y-auto"
+        style={{ zIndex: 1100 }}
+      >
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-muted-foreground/30" aria-hidden />
         <SheetHeader>
           <SheetTitle className="text-xl">{t("status")} / {t("commodity")}</SheetTitle>
         </SheetHeader>

@@ -28,6 +28,7 @@ const Index = () => {
   const [reports, setReports] = useState<AgriReport[]>([]);
   const [selected, setSelected] = useState<AgriReport | null>(null);
   const [tab, setTab] = useState<Tab>("map");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [commodity, setCommodity] = useState("all");
   const [status, setStatus] = useState("all");
@@ -65,6 +66,7 @@ const Index = () => {
   }, [reports, search, commodity, status]);
 
   const handlePinClick = useCallback((report: AgriReport) => {
+    setFilterOpen(false);
     setSelected(report);
   }, []);
 
@@ -94,13 +96,18 @@ const Index = () => {
           <div className="relative h-full w-full">
             <AgriMap reports={filtered} onPinClick={handlePinClick} />
             <MapFilterSheet
+              open={filterOpen}
+              onOpenChange={(o) => { setFilterOpen(o); if (o) setSelected(null); }}
               commodity={commodity}
               onCommodityChange={setCommodity}
               status={status}
               onStatusChange={setStatus}
               commodities={commodities}
             />
-            <PinPopup report={selected} onClose={() => setSelected(null)} />
+            <PinPopup
+              report={selected}
+              onClose={() => setSelected(null)}
+            />
           </div>
         )}
 
