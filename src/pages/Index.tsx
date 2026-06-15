@@ -22,7 +22,10 @@ interface AgriReport {
   price: number | null;
   volume: string | null;
   season: string | null;
+  record_type: string | null;
 }
+
+type MapMode = "current_supply" | "planting_intention";
 
 const Index = () => {
   const [reports, setReports] = useState<AgriReport[]>([]);
@@ -32,12 +35,13 @@ const Index = () => {
   const [search, setSearch] = useState("");
   const [commodity, setCommodity] = useState("all");
   const [status, setStatus] = useState("all");
+  const [mapMode, setMapMode] = useState<MapMode>("current_supply");
 
   const fetchReports = useCallback(async () => {
     const { data, error } = await supabase
       .from("agri_reports")
-      .select("id, lat, lng, status, region, province, municipality, barangay, commodity, price, volume, season");
-    if (!error && data) setReports(data);
+      .select("id, lat, lng, status, region, province, municipality, barangay, commodity, price, volume, season, record_type");
+    if (!error && data) setReports(data as AgriReport[]);
   }, []);
 
   useEffect(() => {
@@ -49,9 +53,15 @@ const Index = () => {
     [reports]
   );
 
+  const mapReports = useMemo(
+    () => reports.filter((r) => (r.record_type ?? "current_supply") === mapMode),
+    [reports, mapMode]
+  );
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return reports.filter((r) => {
+    const source = tab === "map" ? mapReports : reports;
+    return source.filter((r) => {
       if (commodity !== "all" && r.commodity !== commodity) return false;
       if (status !== "all" && r.status !== status) return false;
       if (q) {
@@ -63,7 +73,7 @@ const Index = () => {
       }
       return true;
     });
-  }, [reports, search, commodity, status]);
+  }, [reports, mapReports, tab, search, commodity, status]);
 
   const handlePinClick = useCallback((report: AgriReport) => {
     setFilterOpen(false);
@@ -94,7 +104,21 @@ const Index = () => {
       <main className="flex-1 min-h-0 pb-[72px]">
         {tab === "map" && (
           <div className="relative h-full w-full">
-            <AgriMap reports={filtered} onPinClick={handlePinClick} />
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[500] bg-card/95 backdrop-blur border border-border rounded-full p-1 shadow-lg flex">
+              <button
+                onClick={() => setMapMode("current_supply")}
+                className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${mapMode === "current_supply" ? "bg-primary text-primary-foreground" : "text-foreground/70"}`}
+              >
+                Ngayon
+              </button>
+              <button
+                onClick={() => setMapMode("planting_intention")}
+                className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${mapMode === "planting_intention" ? "bg-primary text-primary-foreground" : "text-foreground/70"}`}
+              >
+                🌱 Paparating
+              </button>
+            </div>
+            <AgriMap reports={filtered} onPinClick={handlePinClick} mode={mapMode} />
             <MapFilterSheet
               open={filterOpen}
               onOpenChange={(o) => { setFilterOpen(o); if (o) setSelected(null); }}
