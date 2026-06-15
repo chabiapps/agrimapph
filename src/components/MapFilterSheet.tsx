@@ -46,6 +46,18 @@ const MapFilterSheet = ({
         side="bottom"
         className="rounded-t-2xl !bottom-[72px] z-[1100] max-h-[50vh] overflow-y-auto"
         style={{ zIndex: 1100 }}
+        onPointerDownOutside={(e) => {
+          const target = e.target as HTMLElement | null;
+          if (target?.closest("[data-radix-popper-content-wrapper],[data-radix-select-content],[data-radix-select-viewport]")) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          const target = e.target as HTMLElement | null;
+          if (target?.closest("[data-radix-popper-content-wrapper],[data-radix-select-content],[data-radix-select-viewport]")) {
+            e.preventDefault();
+          }
+        }}
       >
         <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-muted-foreground/30" aria-hidden />
         <SheetHeader>
