@@ -19,14 +19,19 @@ export type Database = {
           barangay: string | null
           commodity: string | null
           created_at: string
+          expected_harvest_date: string | null
+          expected_volume: string | null
+          growth_stage: string | null
           id: string
           is_verified: boolean
           lat: number
           lng: number
           municipality: string | null
           notes: string | null
+          planted_date: string | null
           price: number | null
           province: string | null
+          record_type: string
           region: string | null
           reported_by: string | null
           season: string | null
@@ -38,14 +43,19 @@ export type Database = {
           barangay?: string | null
           commodity?: string | null
           created_at?: string
+          expected_harvest_date?: string | null
+          expected_volume?: string | null
+          growth_stage?: string | null
           id?: string
           is_verified?: boolean
           lat: number
           lng: number
           municipality?: string | null
           notes?: string | null
+          planted_date?: string | null
           price?: number | null
           province?: string | null
+          record_type?: string
           region?: string | null
           reported_by?: string | null
           season?: string | null
@@ -57,14 +67,19 @@ export type Database = {
           barangay?: string | null
           commodity?: string | null
           created_at?: string
+          expected_harvest_date?: string | null
+          expected_volume?: string | null
+          growth_stage?: string | null
           id?: string
           is_verified?: boolean
           lat?: number
           lng?: number
           municipality?: string | null
           notes?: string | null
+          planted_date?: string | null
           price?: number | null
           province?: string | null
+          record_type?: string
           region?: string | null
           reported_by?: string | null
           season?: string | null
