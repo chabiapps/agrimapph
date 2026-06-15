@@ -23,6 +23,10 @@ interface AgriReport {
   volume: string | null;
   season: string | null;
   record_type: string | null;
+  planted_date: string | null;
+  expected_harvest_date: string | null;
+  expected_volume: string | null;
+  growth_stage: string | null;
 }
 
 type MapMode = "current_supply" | "planting_intention";
@@ -40,7 +44,7 @@ const Index = () => {
   const fetchReports = useCallback(async () => {
     const { data, error } = await supabase
       .from("agri_reports")
-      .select("id, lat, lng, status, region, province, municipality, barangay, commodity, price, volume, season, record_type");
+      .select("id, lat, lng, status, region, province, municipality, barangay, commodity, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage");
     if (!error && data) setReports(data as AgriReport[]);
   }, []);
 
