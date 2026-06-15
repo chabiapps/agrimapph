@@ -15,11 +15,13 @@ interface AgriReport {
   price: number | null;
   volume: string | null;
   season: string | null;
+  record_type?: string | null;
 }
 
 interface AgriMapProps {
   reports: AgriReport[];
   onPinClick: (report: AgriReport) => void;
+  mode?: "current_supply" | "planting_intention";
 }
 
 const statusColor: Record<string, string> = {
@@ -28,7 +30,14 @@ const statusColor: Record<string, string> = {
   balanced: "#eab308",
 };
 
-const AgriMap = ({ reports, onPinClick }: AgriMapProps) => {
+const sproutIcon = L.divIcon({
+  className: "sprout-marker",
+  html: `<div style="font-size:28px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.35));">🌱</div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 28],
+});
+
+const AgriMap = ({ reports, onPinClick, mode = "current_supply" }: AgriMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
 
@@ -51,27 +60,32 @@ const AgriMap = ({ reports, onPinClick }: AgriMapProps) => {
     const map = mapInstance.current;
     if (!map) return;
 
-    // Clear existing markers (collect first to avoid mutation during iteration)
     const toRemove: L.Layer[] = [];
     map.eachLayer((layer) => {
-      if (layer instanceof L.CircleMarker) toRemove.push(layer);
+      if (layer instanceof L.CircleMarker || layer instanceof L.Marker) toRemove.push(layer);
     });
     toRemove.forEach((l) => map.removeLayer(l));
 
     reports.forEach((report) => {
-      const color = statusColor[report.status] || "#9ca3af";
-      L.circleMarker([report.lat, report.lng], {
-        radius: 16,
-        fillColor: color,
-        color: "#fff",
-        weight: 3,
-        opacity: 1,
-        fillOpacity: 0.9,
-      })
-        .addTo(map)
-        .on("click", () => onPinClick(report));
+      if (mode === "planting_intention") {
+        L.marker([report.lat, report.lng], { icon: sproutIcon })
+          .addTo(map)
+          .on("click", () => onPinClick(report));
+      } else {
+        const color = statusColor[report.status] || "#9ca3af";
+        L.circleMarker([report.lat, report.lng], {
+          radius: 16,
+          fillColor: color,
+          color: "#fff",
+          weight: 3,
+          opacity: 1,
+          fillOpacity: 0.9,
+        })
+          .addTo(map)
+          .on("click", () => onPinClick(report));
+      }
     });
-  }, [reports, onPinClick]);
+  }, [reports, onPinClick, mode]);
 
   return <div ref={mapRef} className="h-full w-full" />;
 };
