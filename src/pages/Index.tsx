@@ -40,6 +40,7 @@ const Index = () => {
   const [commodity, setCommodity] = useState("all");
   const [status, setStatus] = useState("all");
   const [mapMode, setMapMode] = useState<MapMode>("current_supply");
+  const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
 
   const fetchReports = useCallback(async () => {
     const { data, error } = await supabase
