@@ -17,6 +17,7 @@ interface AgriReport {
   price: number | null;
   volume: string | null;
   season: string | null;
+  record_type?: string | null;
 }
 
 const statusStyles: Record<string, string> = {
@@ -32,6 +33,7 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => {
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>Type</TableHead>
           <TableHead>{t("region")}</TableHead>
           <TableHead>{t("province")}</TableHead>
           <TableHead>{t("municipality")}</TableHead>
@@ -44,8 +46,20 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {reports.map((r) => (
+        {reports.map((r) => {
+          const isPlanting = (r.record_type ?? "current_supply") === "planting_intention";
+          return (
           <TableRow key={r.id}>
+            <TableCell>
+              <Badge
+                variant="outline"
+                className={isPlanting
+                  ? "bg-green-500/15 text-green-700 border-green-500/30"
+                  : "bg-blue-500/15 text-blue-700 border-blue-500/30"}
+              >
+                {isPlanting ? "🌱 Paparating" : "Ngayon"}
+              </Badge>
+            </TableCell>
             <TableCell>{r.region ?? "—"}</TableCell>
             <TableCell>{r.province ?? "—"}</TableCell>
             <TableCell>{r.municipality ?? "—"}</TableCell>
@@ -62,7 +76,7 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => {
               {r.price != null ? `₱${Number(r.price).toLocaleString()}` : "—"}
             </TableCell>
           </TableRow>
-        ))}
+        );})}
       </TableBody>
     </Table>
   </div>

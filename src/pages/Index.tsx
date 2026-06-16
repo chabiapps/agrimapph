@@ -40,6 +40,7 @@ const Index = () => {
   const [commodity, setCommodity] = useState("all");
   const [status, setStatus] = useState("all");
   const [mapMode, setMapMode] = useState<MapMode>("current_supply");
+  const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
 
   const fetchReports = useCallback(async () => {
     const { data, error } = await supabase
@@ -64,7 +65,9 @@ const Index = () => {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    const source = tab === "map" ? mapReports : reports;
+    const source = tab === "map"
+      ? mapReports
+      : (listType === "all" ? reports : reports.filter((r) => (r.record_type ?? "current_supply") === listType));
     return source.filter((r) => {
       if (commodity !== "all" && r.commodity !== commodity) return false;
       if (status !== "all" && r.status !== status) return false;
@@ -77,7 +80,7 @@ const Index = () => {
       }
       return true;
     });
-  }, [reports, mapReports, tab, search, commodity, status]);
+  }, [reports, mapReports, tab, search, commodity, status, listType]);
 
   const handlePinClick = useCallback((report: AgriReport) => {
     setFilterOpen(false);
@@ -151,6 +154,21 @@ const Index = () => {
               commodities={commodities}
               onExportCsv={handleExportCsv}
             />
+            <div className="px-4 pt-3 flex gap-2">
+              {([
+                { v: "all", label: "Lahat" },
+                { v: "current_supply", label: "Ngayon" },
+                { v: "planting_intention", label: "🌱 Paparating" },
+              ] as const).map((o) => (
+                <button
+                  key={o.v}
+                  onClick={() => setListType(o.v)}
+                  className={`px-3 py-1.5 text-sm font-semibold rounded-full border transition-colors ${listType === o.v ? "bg-primary text-primary-foreground border-primary" : "bg-card text-foreground/70 border-border"}`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
             <div className="flex-1 min-h-0">
               <ReportsTable reports={filtered} />
             </div>
