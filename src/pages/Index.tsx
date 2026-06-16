@@ -154,6 +154,21 @@ const Index = () => {
               commodities={commodities}
               onExportCsv={handleExportCsv}
             />
+            <div className="px-4 pt-3 flex gap-2">
+              {([
+                { v: "all", label: "Lahat" },
+                { v: "current_supply", label: "Ngayon" },
+                { v: "planting_intention", label: "🌱 Paparating" },
+              ] as const).map((o) => (
+                <button
+                  key={o.v}
+                  onClick={() => setListType(o.v)}
+                  className={`px-3 py-1.5 text-sm font-semibold rounded-full border transition-colors ${listType === o.v ? "bg-primary text-primary-foreground border-primary" : "bg-card text-foreground/70 border-border"}`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
             <div className="flex-1 min-h-0">
               <ReportsTable reports={filtered} />
             </div>
