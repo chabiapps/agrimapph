@@ -65,7 +65,9 @@ const Index = () => {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    const source = tab === "map" ? mapReports : reports;
+    const source = tab === "map"
+      ? mapReports
+      : (listType === "all" ? reports : reports.filter((r) => (r.record_type ?? "current_supply") === listType));
     return source.filter((r) => {
       if (commodity !== "all" && r.commodity !== commodity) return false;
       if (status !== "all" && r.status !== status) return false;
@@ -78,7 +80,7 @@ const Index = () => {
       }
       return true;
     });
-  }, [reports, mapReports, tab, search, commodity, status]);
+  }, [reports, mapReports, tab, search, commodity, status, listType]);
 
   const handlePinClick = useCallback((report: AgriReport) => {
     setFilterOpen(false);
