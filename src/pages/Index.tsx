@@ -49,7 +49,7 @@ const Index = () => {
   const fetchReports = useCallback(async () => {
     const { data, error } = await supabase
       .from("agri_reports")
-      .select("id, lat, lng, status, region, province, municipality, barangay, commodity, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage");
+      .select("id, lat, lng, status, region, province, municipality, barangay, commodity, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory");
     if (!error && data) setReports(data as AgriReport[]);
   }, []);
 
