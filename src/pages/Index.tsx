@@ -143,6 +143,8 @@ const Index = () => {
             <MapFilterSheet
               open={filterOpen}
               onOpenChange={(o) => { setFilterOpen(o); if (o) setSelected(null); }}
+              category={category}
+              onCategoryChange={setCategory}
               commodity={commodity}
               onCommodityChange={setCommodity}
               status={status}
