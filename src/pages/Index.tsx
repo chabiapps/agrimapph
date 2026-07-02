@@ -8,6 +8,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import ReportFormPage from "@/components/ReportFormPage";
 import BottomNav, { Tab } from "@/components/BottomNav";
 import MapFilterSheet from "@/components/MapFilterSheet";
+import { CategoryKey, inferCategory } from "@/lib/categories";
 
 interface AgriReport {
   id: string;
@@ -27,6 +28,8 @@ interface AgriReport {
   expected_harvest_date: string | null;
   expected_volume: string | null;
   growth_stage: string | null;
+  category: string | null;
+  subcategory: string | null;
 }
 
 type MapMode = "current_supply" | "planting_intention";
@@ -38,6 +41,7 @@ const Index = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [commodity, setCommodity] = useState("all");
+  const [category, setCategory] = useState<CategoryKey | "all">("all");
   const [status, setStatus] = useState("all");
   const [mapMode, setMapMode] = useState<MapMode>("current_supply");
   const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
@@ -45,7 +49,7 @@ const Index = () => {
   const fetchReports = useCallback(async () => {
     const { data, error } = await supabase
       .from("agri_reports")
-      .select("id, lat, lng, status, region, province, municipality, barangay, commodity, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage");
+      .select("id, lat, lng, status, region, province, municipality, barangay, commodity, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory");
     if (!error && data) setReports(data as AgriReport[]);
   }, []);
 
@@ -53,10 +57,14 @@ const Index = () => {
     fetchReports();
   }, [fetchReports]);
 
-  const commodities = useMemo(
-    () => [...new Set(reports.map((r) => r.commodity).filter(Boolean) as string[])].sort(),
-    [reports]
-  );
+  const commodities = useMemo(() => {
+    const inCat = (r: AgriReport) => {
+      if (category === "all") return true;
+      const c = (r.category ?? inferCategory(r.commodity)) as string;
+      return c === category;
+    };
+    return [...new Set(reports.filter(inCat).map((r) => r.commodity).filter(Boolean) as string[])].sort();
+  }, [reports, category]);
 
   const mapReports = useMemo(
     () => reports.filter((r) => (r.record_type ?? "current_supply") === mapMode),
@@ -70,6 +78,10 @@ const Index = () => {
       : (listType === "all" ? reports : reports.filter((r) => (r.record_type ?? "current_supply") === listType));
     const isPlantingView = tab === "map" ? mapMode === "planting_intention" : listType === "planting_intention";
     return source.filter((r) => {
+      if (category !== "all") {
+        const c = (r.category ?? inferCategory(r.commodity)) as string;
+        if (c !== category) return false;
+      }
       if (commodity !== "all" && r.commodity !== commodity) return false;
       // Status (surplus/deficit/balanced) only applies to current_supply records
       if (!isPlantingView && status !== "all" && r.status !== status) return false;
@@ -82,7 +94,7 @@ const Index = () => {
       }
       return true;
     });
-  }, [reports, mapReports, tab, search, commodity, status, listType, mapMode]);
+  }, [reports, mapReports, tab, search, category, commodity, status, listType, mapMode]);
 
   const handlePinClick = useCallback((report: AgriReport) => {
     setFilterOpen(false);
@@ -131,6 +143,8 @@ const Index = () => {
             <MapFilterSheet
               open={filterOpen}
               onOpenChange={(o) => { setFilterOpen(o); if (o) setSelected(null); }}
+              category={category}
+              onCategoryChange={setCategory}
               commodity={commodity}
               onCommodityChange={setCommodity}
               status={status}

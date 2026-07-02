@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/i18n";
+import { CATEGORIES, CategoryKey } from "@/lib/categories";
 
 interface Props {
   onSubmitted?: () => void;
@@ -50,6 +51,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   const { t } = useLang();
   const [submitting, setSubmitting] = useState(false);
   const [recordType, setRecordType] = useState<RecordType>("current_supply");
+  const [category, setCategory] = useState<CategoryKey>("crops");
   const [form, setForm] = useState({
     commodity: "",
     price: "",
@@ -99,6 +101,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const { error } = await supabase.from("agri_reports").insert({
         record_type: "current_supply",
         commodity: d.commodity,
+        category,
+        subcategory: d.commodity,
         price: d.price,
         status: d.status,
         region: d.region || null,
@@ -132,6 +136,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const { error } = await supabase.from("agri_reports").insert({
         record_type: "planting_intention",
         commodity: d.commodity,
+        category,
+        subcategory: d.commodity,
         status: "balanced",
         planted_date: d.planted_date,
         expected_harvest_date: d.expected_harvest_date,
@@ -197,9 +203,48 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="commodity" className="text-base">Produkto / Commodity *</Label>
-            <Input id="commodity" value={form.commodity} onChange={(e) => update("commodity", e.target.value)} className="min-h-[52px] text-base" required />
+            <Label className="text-base">Uri / Category *</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {CATEGORIES.map((c) => {
+                const isActive = category === c.key;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setCategory(c.key)}
+                    aria-pressed={isActive}
+                    className={`flex flex-col items-center justify-center gap-1 min-h-[76px] rounded-xl border-2 px-1 py-2 transition-all ${
+                      isActive
+                        ? "bg-primary/10 border-primary text-foreground shadow"
+                        : "bg-card border-border text-foreground/80"
+                    }`}
+                  >
+                    <span className="text-2xl leading-none">{c.icon}</span>
+                    <span className="text-xs font-semibold text-center leading-tight">{c.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="commodity" className="text-base">Produkto / Commodity *</Label>
+            <Input
+              id="commodity"
+              list="commodity-suggestions"
+              value={form.commodity}
+              onChange={(e) => update("commodity", e.target.value)}
+              className="min-h-[52px] text-base"
+              placeholder={CATEGORIES.find((c) => c.key === category)?.subcategories[0] ?? ""}
+              required
+            />
+            <datalist id="commodity-suggestions">
+              {(CATEGORIES.find((c) => c.key === category)?.subcategories ?? []).map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          </div>
+
 
           {!isPlanting && (
             <>
