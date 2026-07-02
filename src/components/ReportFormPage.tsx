@@ -136,6 +136,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const { error } = await supabase.from("agri_reports").insert({
         record_type: "planting_intention",
         commodity: d.commodity,
+        category,
+        subcategory: d.commodity,
         status: "balanced",
         planted_date: d.planted_date,
         expected_harvest_date: d.expected_harvest_date,
