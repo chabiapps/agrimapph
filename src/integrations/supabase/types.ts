@@ -17,6 +17,7 @@ export type Database = {
       agri_reports: {
         Row: {
           barangay: string | null
+          category: string | null
           commodity: string | null
           created_at: string
           expected_harvest_date: string | null
@@ -36,11 +37,13 @@ export type Database = {
           reported_by: string | null
           season: string | null
           status: string
+          subcategory: string | null
           updated_at: string
           volume: string | null
         }
         Insert: {
           barangay?: string | null
+          category?: string | null
           commodity?: string | null
           created_at?: string
           expected_harvest_date?: string | null
@@ -60,11 +63,13 @@ export type Database = {
           reported_by?: string | null
           season?: string | null
           status?: string
+          subcategory?: string | null
           updated_at?: string
           volume?: string | null
         }
         Update: {
           barangay?: string | null
+          category?: string | null
           commodity?: string | null
           created_at?: string
           expected_harvest_date?: string | null
@@ -84,6 +89,7 @@ export type Database = {
           reported_by?: string | null
           season?: string | null
           status?: string
+          subcategory?: string | null
           updated_at?: string
           volume?: string | null
         }
