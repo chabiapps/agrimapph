@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/i18n";
+import { CATEGORIES, CategoryKey } from "@/lib/categories";
 
 interface Props {
   onSubmitted?: () => void;
