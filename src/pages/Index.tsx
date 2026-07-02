@@ -57,10 +57,14 @@ const Index = () => {
     fetchReports();
   }, [fetchReports]);
 
-  const commodities = useMemo(
-    () => [...new Set(reports.map((r) => r.commodity).filter(Boolean) as string[])].sort(),
-    [reports]
-  );
+  const commodities = useMemo(() => {
+    const inCat = (r: AgriReport) => {
+      if (category === "all") return true;
+      const c = (r.category ?? inferCategory(r.commodity)) as string;
+      return c === category;
+    };
+    return [...new Set(reports.filter(inCat).map((r) => r.commodity).filter(Boolean) as string[])].sort();
+  }, [reports, category]);
 
   const mapReports = useMemo(
     () => reports.filter((r) => (r.record_type ?? "current_supply") === mapMode),
@@ -74,6 +78,10 @@ const Index = () => {
       : (listType === "all" ? reports : reports.filter((r) => (r.record_type ?? "current_supply") === listType));
     const isPlantingView = tab === "map" ? mapMode === "planting_intention" : listType === "planting_intention";
     return source.filter((r) => {
+      if (category !== "all") {
+        const c = (r.category ?? inferCategory(r.commodity)) as string;
+        if (c !== category) return false;
+      }
       if (commodity !== "all" && r.commodity !== commodity) return false;
       // Status (surplus/deficit/balanced) only applies to current_supply records
       if (!isPlantingView && status !== "all" && r.status !== status) return false;
@@ -86,7 +94,7 @@ const Index = () => {
       }
       return true;
     });
-  }, [reports, mapReports, tab, search, commodity, status, listType, mapMode]);
+  }, [reports, mapReports, tab, search, category, commodity, status, listType, mapMode]);
 
   const handlePinClick = useCallback((report: AgriReport) => {
     setFilterOpen(false);
