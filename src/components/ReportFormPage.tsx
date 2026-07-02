@@ -101,6 +101,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const { error } = await supabase.from("agri_reports").insert({
         record_type: "current_supply",
         commodity: d.commodity,
+        category,
+        subcategory: d.commodity,
         price: d.price,
         status: d.status,
         region: d.region || null,
