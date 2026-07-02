@@ -68,9 +68,11 @@ const Index = () => {
     const source = tab === "map"
       ? mapReports
       : (listType === "all" ? reports : reports.filter((r) => (r.record_type ?? "current_supply") === listType));
+    const isPlantingView = tab === "map" ? mapMode === "planting_intention" : listType === "planting_intention";
     return source.filter((r) => {
       if (commodity !== "all" && r.commodity !== commodity) return false;
-      if (status !== "all" && r.status !== status) return false;
+      // Status (surplus/deficit/balanced) only applies to current_supply records
+      if (!isPlantingView && status !== "all" && r.status !== status) return false;
       if (q) {
         const hay = [r.region, r.province, r.municipality, r.barangay, r.commodity]
           .filter(Boolean)
@@ -80,7 +82,7 @@ const Index = () => {
       }
       return true;
     });
-  }, [reports, mapReports, tab, search, commodity, status, listType]);
+  }, [reports, mapReports, tab, search, commodity, status, listType, mapMode]);
 
   const handlePinClick = useCallback((report: AgriReport) => {
     setFilterOpen(false);
