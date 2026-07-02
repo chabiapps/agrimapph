@@ -41,6 +41,7 @@ const Index = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [commodity, setCommodity] = useState("all");
+  const [category, setCategory] = useState<CategoryKey | "all">("all");
   const [status, setStatus] = useState("all");
   const [mapMode, setMapMode] = useState<MapMode>("current_supply");
   const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
