@@ -51,6 +51,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   const { t } = useLang();
   const [submitting, setSubmitting] = useState(false);
   const [recordType, setRecordType] = useState<RecordType>("current_supply");
+  const [category, setCategory] = useState<CategoryKey>("crops");
   const [form, setForm] = useState({
     commodity: "",
     price: "",
