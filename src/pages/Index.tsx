@@ -28,6 +28,8 @@ interface AgriReport {
   expected_harvest_date: string | null;
   expected_volume: string | null;
   growth_stage: string | null;
+  category: string | null;
+  subcategory: string | null;
 }
 
 type MapMode = "current_supply" | "planting_intention";
