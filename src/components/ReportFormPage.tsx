@@ -151,7 +151,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         status: "balanced",
         planted_date: d.planted_date,
         expected_harvest_date: d.expected_harvest_date,
-        expected_volume: d.expected_volume || null,
+        expected_volume: [form.heads && `${form.heads} ulo`, d.expected_volume].filter(Boolean).join(", ") || null,
         region: d.region || null,
         province: d.province || null,
         municipality: d.municipality || null,
