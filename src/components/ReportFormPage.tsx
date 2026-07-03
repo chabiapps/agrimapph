@@ -66,6 +66,9 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     planted_date: todayStr(),
     expected_harvest_date: "",
     expected_volume: "",
+    date_caught: todayStr(),
+    heads: "",
+    weight: "",
   });
 
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
