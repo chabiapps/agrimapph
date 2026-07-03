@@ -101,6 +101,11 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         return;
       }
       const d = parsed.data;
+      const isAnimal = category === "poultry" || category === "livestock";
+      const isFish = category === "fish";
+      const volumeStr = isAnimal
+        ? [form.heads && `${form.heads} ulo`, form.weight && `${form.weight} kg`].filter(Boolean).join(", ") || null
+        : null;
       const { error } = await supabase.from("agri_reports").insert({
         record_type: "current_supply",
         commodity: d.commodity,
@@ -115,6 +120,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         lat: d.lat,
         lng: d.lng,
         notes: d.notes || null,
+        volume: volumeStr,
+        planted_date: isFish ? form.date_caught : null,
         reported_by: user.id,
       });
       setSubmitting(false);
