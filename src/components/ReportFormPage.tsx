@@ -273,13 +273,33 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                   </SelectContent>
                 </Select>
               </div>
+              {category === "fish" && (
+                <div className="space-y-2">
+                  <Label htmlFor="date_caught" className="text-base">Petsa ng Huli (Date Caught) *</Label>
+                  <Input id="date_caught" type="date" value={form.date_caught} onChange={(e) => update("date_caught", e.target.value)} className="min-h-[52px] text-base" required />
+                </div>
+              )}
+              {(category === "poultry" || category === "livestock") && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="heads" className="text-base">Bilang ng Ulo *</Label>
+                    <Input id="heads" type="number" min="0" placeholder="hal. 10" value={form.heads} onChange={(e) => update("heads", e.target.value)} className="min-h-[52px] text-base" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="weight" className="text-base">Timbang (kg)</Label>
+                    <Input id="weight" type="number" step="0.1" min="0" placeholder="hal. 50" value={form.weight} onChange={(e) => update("weight", e.target.value)} className="min-h-[52px] text-base" />
+                  </div>
+                </div>
+              )}
             </>
           )}
 
           {isPlanting && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="planted_date" className="text-base">Petsa ng Pagtanim *</Label>
+                <Label htmlFor="planted_date" className="text-base">
+                  {category === "fish" ? "Petsa ng Huli (Date Caught) *" : "Petsa ng Pagtanim *"}
+                </Label>
                 <Input id="planted_date" type="date" value={form.planted_date} onChange={(e) => update("planted_date", e.target.value)} className="min-h-[52px] text-base" required />
               </div>
               <div className="space-y-2">
@@ -290,6 +310,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                 <Label htmlFor="expected_volume" className="text-base">Inaasahang Dami (Volume)</Label>
                 <Input id="expected_volume" placeholder="hal. 500 kg" value={form.expected_volume} onChange={(e) => update("expected_volume", e.target.value)} className="min-h-[52px] text-base" />
               </div>
+              {(category === "poultry" || category === "livestock") && (
+                <div className="space-y-2">
+                  <Label htmlFor="heads" className="text-base">Bilang ng Ulo *</Label>
+                  <Input id="heads" type="number" min="0" placeholder="hal. 10" value={form.heads} onChange={(e) => update("heads", e.target.value)} className="min-h-[52px] text-base" required />
+                </div>
+              )}
             </>
           )}
 
