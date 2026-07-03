@@ -66,6 +66,9 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     planted_date: todayStr(),
     expected_harvest_date: "",
     expected_volume: "",
+    date_caught: todayStr(),
+    heads: "",
+    weight: "",
   });
 
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -98,6 +101,11 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         return;
       }
       const d = parsed.data;
+      const isAnimal = category === "poultry" || category === "livestock";
+      const isFish = category === "fish";
+      const volumeStr = isAnimal
+        ? [form.heads && `${form.heads} ulo`, form.weight && `${form.weight} kg`].filter(Boolean).join(", ") || null
+        : null;
       const { error } = await supabase.from("agri_reports").insert({
         record_type: "current_supply",
         commodity: d.commodity,
@@ -112,6 +120,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         lat: d.lat,
         lng: d.lng,
         notes: d.notes || null,
+        volume: volumeStr,
+        planted_date: isFish ? form.date_caught : null,
         reported_by: user.id,
       });
       setSubmitting(false);
@@ -141,7 +151,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         status: "balanced",
         planted_date: d.planted_date,
         expected_harvest_date: d.expected_harvest_date,
-        expected_volume: d.expected_volume || null,
+        expected_volume: [form.heads && `${form.heads} ulo`, d.expected_volume].filter(Boolean).join(", ") || null,
         region: d.region || null,
         province: d.province || null,
         municipality: d.municipality || null,
@@ -202,8 +212,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label className="text-base">Uri / Category *</Label>
+          <div className="space-y-3">
+            <Label className="text-base font-bold">Hakbang 1: Piliin ang Uri / Step 1: Category *</Label>
             <div className="grid grid-cols-3 gap-2">
               {CATEGORIES.map((c) => {
                 const isActive = category === c.key;
@@ -213,13 +223,13 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                     type="button"
                     onClick={() => setCategory(c.key)}
                     aria-pressed={isActive}
-                    className={`flex flex-col items-center justify-center gap-1 min-h-[76px] rounded-xl border-2 px-1 py-2 transition-all ${
+                    className={`flex flex-col items-center justify-center gap-1 min-h-[96px] rounded-2xl border-2 px-1 py-3 transition-all ${
                       isActive
-                        ? "bg-primary/10 border-primary text-foreground shadow"
+                        ? "bg-primary/10 border-primary text-foreground shadow-md scale-[1.02]"
                         : "bg-card border-border text-foreground/80"
                     }`}
                   >
-                    <span className="text-2xl leading-none">{c.icon}</span>
+                    <span className="text-4xl leading-none">{c.icon}</span>
                     <span className="text-xs font-semibold text-center leading-tight">{c.label}</span>
                   </button>
                 );
@@ -263,13 +273,33 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                   </SelectContent>
                 </Select>
               </div>
+              {category === "fish" && (
+                <div className="space-y-2">
+                  <Label htmlFor="date_caught" className="text-base">Petsa ng Huli (Date Caught) *</Label>
+                  <Input id="date_caught" type="date" value={form.date_caught} onChange={(e) => update("date_caught", e.target.value)} className="min-h-[52px] text-base" required />
+                </div>
+              )}
+              {(category === "poultry" || category === "livestock") && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="heads" className="text-base">Bilang ng Ulo *</Label>
+                    <Input id="heads" type="number" min="0" placeholder="hal. 10" value={form.heads} onChange={(e) => update("heads", e.target.value)} className="min-h-[52px] text-base" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="weight" className="text-base">Timbang (kg)</Label>
+                    <Input id="weight" type="number" step="0.1" min="0" placeholder="hal. 50" value={form.weight} onChange={(e) => update("weight", e.target.value)} className="min-h-[52px] text-base" />
+                  </div>
+                </div>
+              )}
             </>
           )}
 
           {isPlanting && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="planted_date" className="text-base">Petsa ng Pagtanim *</Label>
+                <Label htmlFor="planted_date" className="text-base">
+                  {category === "fish" ? "Petsa ng Huli (Date Caught) *" : "Petsa ng Pagtanim *"}
+                </Label>
                 <Input id="planted_date" type="date" value={form.planted_date} onChange={(e) => update("planted_date", e.target.value)} className="min-h-[52px] text-base" required />
               </div>
               <div className="space-y-2">
@@ -280,6 +310,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                 <Label htmlFor="expected_volume" className="text-base">Inaasahang Dami (Volume)</Label>
                 <Input id="expected_volume" placeholder="hal. 500 kg" value={form.expected_volume} onChange={(e) => update("expected_volume", e.target.value)} className="min-h-[52px] text-base" />
               </div>
+              {(category === "poultry" || category === "livestock") && (
+                <div className="space-y-2">
+                  <Label htmlFor="heads" className="text-base">Bilang ng Ulo *</Label>
+                  <Input id="heads" type="number" min="0" placeholder="hal. 10" value={form.heads} onChange={(e) => update("heads", e.target.value)} className="min-h-[52px] text-base" required />
+                </div>
+              )}
             </>
           )}
 
