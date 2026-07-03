@@ -3,6 +3,7 @@ import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
 } from "@/components/ui/table";
 import { useLang, TKey } from "@/lib/i18n";
+import { getCommodityIcon } from "@/lib/categories";
 
 interface AgriReport {
   id: string;
@@ -18,6 +19,8 @@ interface AgriReport {
   volume: string | null;
   season: string | null;
   record_type?: string | null;
+  subcategory?: string | null;
+  category?: string | null;
 }
 
 const statusStyles: Record<string, string> = {
@@ -64,7 +67,12 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => {
             <TableCell>{r.province ?? "—"}</TableCell>
             <TableCell>{r.municipality ?? "—"}</TableCell>
             <TableCell>{r.barangay ?? "—"}</TableCell>
-            <TableCell className="font-medium">{r.commodity ?? "—"}</TableCell>
+            <TableCell className="font-medium">
+              <span className="flex items-center gap-1.5">
+                <span>{getCommodityIcon(r.subcategory, r.category)}</span>
+                {r.commodity ?? "—"}
+              </span>
+            </TableCell>
             <TableCell>{r.season ?? "—"}</TableCell>
             <TableCell>{r.volume ?? "—"}</TableCell>
             <TableCell>

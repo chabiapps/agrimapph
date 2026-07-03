@@ -80,3 +80,79 @@ export const inferCategory = (commodity?: string | null): CategoryKey => {
 
 export const getCategoryDef = (key: CategoryKey) =>
   CATEGORIES.find((c) => c.key === key)!;
+
+const SUBCATEGORY_ICONS: Record<string, string> = {
+  // Crops
+  "rice": "🌾",
+  "corn": "🌽",
+  "tomato": "🍅",
+  "onion": "🧅",
+  "garlic": "🧄",
+  "eggplant": "🍆",
+  "sweet potato": "🍠",
+  "cabbage": "🥬",
+  "bitter gourd": "🥒",
+  "string beans": "🫘",
+  "squash": "🎃",
+  "banana": "🍌",
+  "mango": "🥭",
+  "pineapple": "🍍",
+  "coconut": "🥥",
+  "sugarcane": "🎋",
+  "cacao": "🍫",
+  "coffee": "☕",
+  "durian": "🌵",
+  "cassava": "🥔",
+  "carrot": "🥕",
+  "papaya": "🍈",
+  "calamansi": "🍋",
+  // Fish & seafood
+  "sardines": "🐟",
+  "bangus": "🐠",
+  "tilapia": "🐡",
+  "galunggong": "🐟",
+  "hipon": "🦐",
+  "alimasag": "🦀",
+  "mussel": "🦪",
+  "oyster": "🦪",
+  "pusit": "🦑",
+  "tuna": "🐟",
+  "seaweed": "🌿",
+  "dilis": "🐟",
+  // Poultry
+  "broiler chicken": "🐔",
+  "native chicken": "🐔",
+  "chicken eggs": "🥚",
+  "duck": "🦆",
+  "duck eggs (balut)": "🦆",
+  // Livestock
+  "pork": "🐷",
+  "beef": "🐄",
+  "goat": "🐐",
+  "carabao": "🐃",
+  "sheep": "🐑",
+  // Dairy
+  "fresh milk": "🥛",
+  "carabao milk": "🥛",
+  "cheese": "🧀",
+};
+
+const CATEGORY_FALLBACK: Record<string, string> = {
+  crops: "🌾",
+  fish: "🐟",
+  poultry: "🐔",
+  livestock: "🐖",
+  dairy: "🥛",
+  other: "🌿",
+};
+
+export const getCommodityIcon = (
+  subcategory?: string | null,
+  category?: string | null
+): string => {
+  if (subcategory) {
+    const icon = SUBCATEGORY_ICONS[subcategory.toLowerCase()];
+    if (icon) return icon;
+  }
+  return CATEGORY_FALLBACK[category?.toLowerCase() ?? ""] ?? "🌿";
+};;

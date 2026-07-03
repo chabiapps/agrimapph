@@ -1,7 +1,8 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, Calendar, Sprout, Clock } from "lucide-react";
+import { MapPin, Package, Calendar, Clock } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import { getCommodityIcon } from "@/lib/categories";
 
 interface AgriReport {
   id: string;
@@ -19,6 +20,8 @@ interface AgriReport {
   expected_harvest_date?: string | null;
   expected_volume?: string | null;
   growth_stage?: string | null;
+  subcategory?: string | null;
+  category?: string | null;
 }
 
 interface Props {
@@ -60,6 +63,7 @@ const PinPopup = ({ report, onClose }: Props) => {
   const statusStyle = statusStyles[statusKey] ?? statusStyles.balanced;
   const statusLabel = t(statusKey);
 
+  const emoji = getCommodityIcon(report?.subcategory, report?.category);
   const weeks = weeksUntil(report?.expected_harvest_date);
   const countdownLabel =
     weeks == null ? "—" :
@@ -78,7 +82,8 @@ const PinPopup = ({ report, onClose }: Props) => {
         {report && !isPlanting && (
           <div className="flex flex-col gap-5">
             <SheetHeader className="text-left space-y-2 pr-8">
-              <SheetTitle className="text-3xl font-extrabold leading-tight">
+              <SheetTitle className="text-3xl font-extrabold leading-tight flex items-center gap-2">
+                <span style={{ fontSize: 32 }}>{emoji}</span>
                 {report.commodity ?? "—"}
               </SheetTitle>
               <div>
@@ -121,7 +126,7 @@ const PinPopup = ({ report, onClose }: Props) => {
           <div className="flex flex-col gap-5">
             <SheetHeader className="text-left space-y-2 pr-8">
               <SheetTitle className="text-3xl font-extrabold leading-tight flex items-center gap-2">
-                <Sprout className="h-7 w-7 text-green-600" />
+                <span style={{ fontSize: 32 }}>{emoji}</span>
                 {report.commodity ?? "—"}
               </SheetTitle>
               <div className="flex flex-wrap gap-2">
