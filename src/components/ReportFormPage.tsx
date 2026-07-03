@@ -212,8 +212,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label className="text-base">Uri / Category *</Label>
+          <div className="space-y-3">
+            <Label className="text-base font-bold">Hakbang 1: Piliin ang Uri / Step 1: Category *</Label>
             <div className="grid grid-cols-3 gap-2">
               {CATEGORIES.map((c) => {
                 const isActive = category === c.key;
@@ -223,13 +223,13 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                     type="button"
                     onClick={() => setCategory(c.key)}
                     aria-pressed={isActive}
-                    className={`flex flex-col items-center justify-center gap-1 min-h-[76px] rounded-xl border-2 px-1 py-2 transition-all ${
+                    className={`flex flex-col items-center justify-center gap-1 min-h-[96px] rounded-2xl border-2 px-1 py-3 transition-all ${
                       isActive
-                        ? "bg-primary/10 border-primary text-foreground shadow"
+                        ? "bg-primary/10 border-primary text-foreground shadow-md scale-[1.02]"
                         : "bg-card border-border text-foreground/80"
                     }`}
                   >
-                    <span className="text-2xl leading-none">{c.icon}</span>
+                    <span className="text-4xl leading-none">{c.icon}</span>
                     <span className="text-xs font-semibold text-center leading-tight">{c.label}</span>
                   </button>
                 );
