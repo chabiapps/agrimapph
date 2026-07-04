@@ -19,6 +19,7 @@ interface AgriReport {
   record_type?: string | null;
   subcategory?: string | null;
   category?: string | null;
+  expected_harvest_date?: string | null;
 }
 
 interface AgriMapProps {
