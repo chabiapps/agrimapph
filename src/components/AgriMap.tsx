@@ -100,7 +100,12 @@ const AgriMap = ({ reports, onPinClick, mode = "current_supply" }: AgriMapProps)
       const emoji = getCommodityIcon(report.subcategory, report.category);
 
       if (mode === "planting_intention") {
-        L.marker([report.lat, report.lng], { icon: makePlantingIcon(emoji) })
+        let nearHarvest = false;
+        if (report.expected_harvest_date) {
+          const diffDays = (new Date(report.expected_harvest_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+          if (!isNaN(diffDays) && diffDays >= 0 && diffDays <= 14) nearHarvest = true;
+        }
+        L.marker([report.lat, report.lng], { icon: makePlantingIcon(emoji, nearHarvest) })
           .addTo(map)
           .on("click", () => onPinClick(report));
       } else {
