@@ -192,7 +192,12 @@ const Index = () => {
         )}
 
         {tab === "report" && (
-          <ReportFormPage onSubmitted={() => { fetchReports(); setTab("map"); }} />
+          <ReportFormPage onSubmitted={(rt) => {
+            fetchReports();
+            if (rt === "planting_intention") setMapMode("planting_intention");
+            setTab("map");
+          }} />
+
         )}
       </main>
 
