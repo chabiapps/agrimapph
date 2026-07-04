@@ -34,17 +34,20 @@ const statusColor: Record<string, string> = {
   balanced: "#eab308",
 };
 
-const makePlantingIcon = (emoji: string) =>
+const makePlantingIcon = (emoji: string, nearHarvest = false) =>
   L.divIcon({
     className: "",
-    html: `<div style="
-      width:40px;height:40px;border-radius:50%;
-      border:3px solid #16a34a;
-      background:#f0fdf4;
-      display:flex;align-items:center;justify-content:center;
-      font-size:22px;line-height:1;
-      box-shadow:0 2px 6px rgba(0,0,0,0.28);
-    ">${emoji}</div>`,
+    html: `<div style="position:relative;width:40px;height:40px;">
+      ${nearHarvest ? `<div style="position:absolute;inset:-6px;border-radius:50%;border:3px solid #f97316;animation:agri-pulse 1.4s ease-out infinite;"></div>` : ""}
+      <div style="
+        position:relative;width:40px;height:40px;border-radius:50%;
+        border:3px solid ${nearHarvest ? "#f97316" : "#16a34a"};
+        background:#f0fdf4;
+        display:flex;align-items:center;justify-content:center;
+        font-size:22px;line-height:1;
+        box-shadow:0 2px 6px rgba(0,0,0,0.28);
+      ">${emoji}</div>
+    </div>`,
     iconSize: [40, 40],
     iconAnchor: [20, 20],
   });
