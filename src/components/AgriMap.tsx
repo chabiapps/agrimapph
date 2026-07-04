@@ -19,6 +19,7 @@ interface AgriReport {
   record_type?: string | null;
   subcategory?: string | null;
   category?: string | null;
+  expected_harvest_date?: string | null;
 }
 
 interface AgriMapProps {
@@ -33,17 +34,20 @@ const statusColor: Record<string, string> = {
   balanced: "#eab308",
 };
 
-const makePlantingIcon = (emoji: string) =>
+const makePlantingIcon = (emoji: string, nearHarvest = false) =>
   L.divIcon({
     className: "",
-    html: `<div style="
-      width:40px;height:40px;border-radius:50%;
-      border:3px solid #16a34a;
-      background:#f0fdf4;
-      display:flex;align-items:center;justify-content:center;
-      font-size:22px;line-height:1;
-      box-shadow:0 2px 6px rgba(0,0,0,0.28);
-    ">${emoji}</div>`,
+    html: `<div style="position:relative;width:40px;height:40px;">
+      ${nearHarvest ? `<div style="position:absolute;inset:-6px;border-radius:50%;border:3px solid #f97316;animation:agri-pulse 1.4s ease-out infinite;"></div>` : ""}
+      <div style="
+        position:relative;width:40px;height:40px;border-radius:50%;
+        border:3px solid ${nearHarvest ? "#f97316" : "#16a34a"};
+        background:#f0fdf4;
+        display:flex;align-items:center;justify-content:center;
+        font-size:22px;line-height:1;
+        box-shadow:0 2px 6px rgba(0,0,0,0.28);
+      ">${emoji}</div>
+    </div>`,
     iconSize: [40, 40],
     iconAnchor: [20, 20],
   });
@@ -96,7 +100,12 @@ const AgriMap = ({ reports, onPinClick, mode = "current_supply" }: AgriMapProps)
       const emoji = getCommodityIcon(report.subcategory, report.category);
 
       if (mode === "planting_intention") {
-        L.marker([report.lat, report.lng], { icon: makePlantingIcon(emoji) })
+        let nearHarvest = false;
+        if (report.expected_harvest_date) {
+          const diffDays = (new Date(report.expected_harvest_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+          if (!isNaN(diffDays) && diffDays >= 0 && diffDays <= 14) nearHarvest = true;
+        }
+        L.marker([report.lat, report.lng], { icon: makePlantingIcon(emoji, nearHarvest) })
           .addTo(map)
           .on("click", () => onPinClick(report));
       } else {
