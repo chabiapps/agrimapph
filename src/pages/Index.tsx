@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 import AgriMap from "@/components/AgriMap";
 import PinPopup from "@/components/PinPopup";
 import ReportsTable from "@/components/ReportsTable";
