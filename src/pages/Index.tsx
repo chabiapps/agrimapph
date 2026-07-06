@@ -233,7 +233,7 @@ const UserBadge = () => {
     <button
       onClick={signOut}
       title="Mag-logout"
-      className="fixed top-3 right-3 z-[600] flex items-center gap-2 bg-card/95 backdrop-blur border border-border rounded-full pl-1 pr-3 py-1 shadow-lg hover:bg-muted transition-colors"
+      className="fixed top-3 right-16 z-[1002] flex items-center gap-2 bg-card/95 backdrop-blur border border-border rounded-full pl-1 pr-3 py-1 shadow-lg hover:bg-muted transition-colors"
     >
       <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground grid place-items-center font-bold text-sm">
         {initial}
