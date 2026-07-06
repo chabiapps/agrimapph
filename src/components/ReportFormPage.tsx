@@ -101,6 +101,7 @@ const VOLUME_LEVELS = [
 
 const ReportFormPage = ({ onSubmitted }: Props) => {
   const { t } = useLang();
+  const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [recordType, setRecordType] = useState<RecordType>("current_supply");
   const [category, setCategory] = useState<CategoryKey>("crops");
