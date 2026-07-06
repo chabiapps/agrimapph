@@ -12,6 +12,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/i18n";
 import { CATEGORIES, CategoryKey, getCommodityIcon } from "@/lib/categories";
+import LocationDropdowns, { LocationValue } from "@/components/LocationDropdowns";
 
 interface Props {
   onSubmitted?: (recordType?: "current_supply" | "planting_intention") => void;
@@ -27,9 +28,10 @@ const harvestSchema = z.object({
   commodity: nonEmpty("Produkto"),
   price: z.coerce.number().min(0).max(100000),
   status: z.enum(["surplus", "deficit", "balanced"]),
+  volume_level: z.string().min(1, { message: "Piliin ang dami ng produkto" }),
   region: nonEmpty("Rehiyon"),
-  province: nonEmpty("Probinsya"),
-  municipality: nonEmpty("Munisipyo"),
+  province: nonEmpty("Lalawigan"),
+  municipality: nonEmpty("Bayan"),
   barangay: nonEmpty("Barangay"),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
@@ -38,11 +40,12 @@ const harvestSchema = z.object({
 
 const plantingSchema = z.object({
   commodity: nonEmpty("Produkto"),
+  volume_level: z.string().min(1, { message: "Piliin ang dami ng produkto" }),
   planted_date: z.string().min(1),
   expected_harvest_date: z.string().min(1),
   region: nonEmpty("Rehiyon"),
-  province: nonEmpty("Probinsya"),
-  municipality: nonEmpty("Munisipyo"),
+  province: nonEmpty("Lalawigan"),
+  municipality: nonEmpty("Bayan"),
   barangay: nonEmpty("Barangay"),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
@@ -92,12 +95,17 @@ const DATE_LABELS: Record<string, { start: string; end: string }> = {
   other: { start: "📅 Petsa ng simula", end: "📅 Inaasahang petsa ng ani" },
 };
 
-const VOLUME_LEVELS = [
-  { value: "Napakataas", label: "Napakataas" },
-  { value: "Mataas", label: "Mataas" },
-  { value: "Katamtaman", label: "Katamtaman" },
-  { value: "Mababa", label: "Mababa" },
+const VOLUME_OPTIONS = [
+  { value: "Napakataas", label: "Napakataas", sub: "Very High" },
+  { value: "Mataas", label: "Mataas", sub: "High" },
+  { value: "Katamtaman", label: "Katamtaman", sub: "Medium" },
+  { value: "Mababa", label: "Mababa", sub: "Low" },
 ];
+
+const emptyLocation = (): LocationValue => ({
+  region: "", province: "", municipality: "", barangay: "",
+  provinceCode: "", municipalityCode: "",
+});
 
 const ReportFormPage = ({ onSubmitted }: Props) => {
   const { t } = useLang();
@@ -105,14 +113,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [recordType, setRecordType] = useState<RecordType>("current_supply");
   const [category, setCategory] = useState<CategoryKey>("crops");
+  const [location, setLocation] = useState<LocationValue>(emptyLocation());
+  const [volumeError, setVolumeError] = useState(false);
   const [form, setForm] = useState({
     commodity: "",
     price: "",
     status: "balanced",
-    region: "",
-    province: "",
-    municipality: "",
-    barangay: "",
     lat: "12.8797",
     lng: "121.774",
     notes: "",
@@ -140,8 +146,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     if (!form.expected_harvest_date) return null;
     const diff = new Date(form.expected_harvest_date).getTime() - Date.now();
     if (isNaN(diff)) return null;
-    const weeks = Math.round(diff / (1000 * 60 * 60 * 24 * 7));
-    return weeks;
+    return Math.round(diff / (1000 * 60 * 60 * 24 * 7));
   }, [form.expected_harvest_date]);
 
   const changeCategory = (k: CategoryKey) => {
@@ -156,11 +161,18 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       toast({ title: "Mag-login muna", variant: "destructive" });
       return;
     }
+
+    if (!form.volume_level) {
+      setVolumeError(true);
+      toast({ title: "Kulang ang detalye", description: "Piliin ang dami ng produkto", variant: "destructive" });
+      return;
+    }
+    setVolumeError(false);
     setSubmitting(true);
 
-    // Default lat/lng to 0 when not provided so insert doesn't fail on null.
     const normalized = {
       ...form,
+      ...location,
       lat: form.lat.trim() === "" ? "0" : form.lat,
       lng: form.lng.trim() === "" ? "0" : form.lng,
     };
@@ -176,8 +188,9 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const isAnimal = category === "poultry" || category === "livestock";
       const isFish = category === "fish";
       const volumeStr = isAnimal
-        ? [form.heads && `${form.heads} ulo`, form.weight && `${form.weight} kg`].filter(Boolean).join(", ") || null
-        : null;
+        ? [form.heads && `${form.heads} ulo`, form.weight && `${form.weight} kg`].filter(Boolean).join(", ") || d.volume_level
+        : d.volume_level;
+
       const insertPayload = {
         record_type: "current_supply",
         category, subcategory: d.commodity,
@@ -187,23 +200,18 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         lat: d.lat, lng: d.lng, notes: d.notes || null, volume: volumeStr,
         planted_date: isFish ? form.date_caught : null,
         reported_by: user.id,
-        user_id: user.id,
       };
-      console.log("[agri_reports] INSERT current_supply payload:", insertPayload);
-      const { data: insData, error } = await supabase.from("agri_reports").insert(insertPayload as never).select();
-      console.log("[agri_reports] INSERT current_supply response:", { insData, error });
+      const { error } = await supabase.from("agri_reports").insert(insertPayload as never).select();
       setSubmitting(false);
       if (error) {
-        console.error("[agri_reports] INSERT error:", error);
-        return toast({ title: "Submission failed", description: `${error.message}${error.details ? ` — ${error.details}` : ""}${error.hint ? ` (${error.hint})` : ""}`, variant: "destructive" });
+        return toast({ title: "Submission failed", description: `${error.message}${error.details ? ` — ${error.details}` : ""}`, variant: "destructive" });
       }
       toast({ title: "Salamat!", description: "Naipadala ang ulat." });
       onSubmitted?.("current_supply");
-      setForm((f) => ({ ...f, commodity: "", price: "", notes: "" }));
+      setForm((f) => ({ ...f, commodity: "", price: "", notes: "", volume_level: "" }));
       return;
     }
 
-    // Planting intention
     const parsed = plantingSchema.safeParse(normalized);
     if (!parsed.success) {
       setSubmitting(false);
@@ -211,7 +219,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       return;
     }
     const d = parsed.data;
-    const volumeCombined = [form.volume_level, form.expected_volume].filter(Boolean).join(" — ") || null;
+    const volumeCombined = [d.volume_level, form.expected_volume].filter(Boolean).join(" — ") || null;
     const notesCombined = [
       form.reporter_name && `Pangalan: ${form.reporter_name}`,
       form.reporter_contact && `Contact: ${form.reporter_contact}`,
@@ -231,19 +239,15 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       lat: d.lat, lng: d.lng,
       notes: notesCombined,
       reported_by: user.id,
-      user_id: user.id,
     };
-    console.log("[agri_reports] INSERT planting_intention payload:", plantingPayload);
-    const { data: insData, error } = await supabase.from("agri_reports").insert(plantingPayload as never).select();
-    console.log("[agri_reports] INSERT planting_intention response:", { insData, error });
+    const { error } = await supabase.from("agri_reports").insert(plantingPayload as never).select();
     setSubmitting(false);
     if (error) {
-      console.error("[agri_reports] INSERT error:", error);
-      return toast({ title: "Submission failed", description: `${error.message}${error.details ? ` — ${error.details}` : ""}${error.hint ? ` (${error.hint})` : ""}`, variant: "destructive" });
+      return toast({ title: "Submission failed", description: `${error.message}${error.details ? ` — ${error.details}` : ""}`, variant: "destructive" });
     }
     toast({
       title: "Salamat!",
-      description: "Nai-record na ang iyong Paparating na ani. Aabisuhan ka namin kung malapit na ang iyong inaasahang ani.",
+      description: "Nai-record na ang iyong Paparating na ani.",
     });
     onSubmitted?.("planting_intention");
     setForm((f) => ({
@@ -262,6 +266,39 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
 
   const stageOptions = STAGE_BY_CATEGORY[category] ?? STAGE_BY_CATEGORY.other;
   const dateLabels = DATE_LABELS[category] ?? DATE_LABELS.other;
+
+  const VolumeToggle = () => (
+    <div className="space-y-2">
+      <Label className={`text-base font-bold ${volumeError ? "text-destructive" : ""}`}>
+        Dami ng Produkto *
+      </Label>
+      <div className="grid grid-cols-2 gap-3">
+        {VOLUME_OPTIONS.map((v) => {
+          const active = form.volume_level === v.value;
+          return (
+            <button
+              key={v.value}
+              type="button"
+              onClick={() => { update("volume_level", v.value); setVolumeError(false); }}
+              className={`min-h-[64px] rounded-xl border-2 px-3 py-2 flex flex-col items-center justify-center gap-0.5 font-semibold transition-all ${
+                active
+                  ? "bg-green-600 border-green-600 text-white shadow-md scale-[1.02]"
+                  : volumeError
+                  ? "bg-card border-destructive text-foreground/80"
+                  : "bg-card border-border text-foreground/80 hover:border-green-400"
+              }`}
+            >
+              <span className="text-sm">{v.label}</span>
+              <span className={`text-xs ${active ? "text-white/80" : "text-muted-foreground"}`}>{v.sub}</span>
+            </button>
+          );
+        })}
+      </div>
+      {volumeError && (
+        <p className="text-sm text-destructive font-medium">Piliin ang dami ng produkto</p>
+      )}
+    </div>
+  );
 
   return (
     <div className="h-full w-full overflow-y-auto bg-background">
@@ -285,14 +322,14 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         <div className="bg-muted rounded-full p-1 flex mb-6">
           <button
             type="button"
-            onClick={() => setRecordType("current_supply")}
+            onClick={() => { setRecordType("current_supply"); update("volume_level", ""); setVolumeError(false); }}
             className={`flex-1 px-3 py-2.5 text-sm font-semibold rounded-full transition-colors ${!isPlanting ? "bg-primary text-primary-foreground shadow" : "text-foreground/70"}`}
           >
             Ano ang ani mo ngayon?
           </button>
           <button
             type="button"
-            onClick={() => setRecordType("planting_intention")}
+            onClick={() => { setRecordType("planting_intention"); update("volume_level", ""); setVolumeError(false); }}
             className={`flex-1 px-3 py-2.5 text-sm font-semibold rounded-full transition-colors ${isPlanting ? "bg-primary text-primary-foreground shadow" : "text-foreground/70"}`}
           >
             🌱 Itinanim Ko
@@ -360,6 +397,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
             )}
           </div>
 
+          {/* Current supply specific fields */}
           {!isPlanting && (
             <>
               <div className="space-y-2">
@@ -377,6 +415,10 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Volume toggles — current supply */}
+              <VolumeToggle />
+
               {category === "fish" && (
                 <div className="space-y-2">
                   <Label htmlFor="date_caught" className="text-base">Petsa ng Huli *</Label>
@@ -398,9 +440,9 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
             </>
           )}
 
+          {/* Planting intention specific fields */}
           {isPlanting && (
             <>
-              {/* Step 3: Dates + growth stage */}
               <div className="space-y-2">
                 <Label htmlFor="planted_date" className="text-base font-bold">{dateLabels.start} *</Label>
                 <Input id="planted_date" type="date" value={form.planted_date} onChange={(e) => update("planted_date", e.target.value)} className="min-h-[52px] text-base" required />
@@ -410,9 +452,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                 <Input id="expected_harvest_date" type="date" value={form.expected_harvest_date} onChange={(e) => update("expected_harvest_date", e.target.value)} className="min-h-[52px] text-base" required />
                 {weeksFromNow !== null && (
                   <p className="text-sm font-semibold text-green-700">
-                    {weeksFromNow <= 0
-                      ? "Handa na ngayon"
-                      : `Mga ${weeksFromNow} linggo mula ngayon`}
+                    {weeksFromNow <= 0 ? "Handa na ngayon" : `Mga ${weeksFromNow} linggo mula ngayon`}
                   </p>
                 )}
               </div>
@@ -441,57 +481,25 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                 </div>
               </div>
 
-              {/* Step 4: Volume */}
+              {/* Volume toggles — planting intention */}
+              <VolumeToggle />
+
               <div className="space-y-2">
-                <Label className="text-base font-bold">Magkano ang inaasahan mong ani?</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {VOLUME_LEVELS.map((v) => {
-                    const active = form.volume_level === v.value;
-                    return (
-                      <button
-                        key={v.value}
-                        type="button"
-                        onClick={() => update("volume_level", v.value)}
-                        className={`min-h-[52px] rounded-xl border-2 px-3 text-sm font-semibold transition-all ${
-                          active ? "bg-primary/10 border-primary" : "bg-card border-border text-foreground/80"
-                        }`}
-                      >
-                        {v.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                <Label className="text-base">Tinatayang Dami (opsyonal)</Label>
                 <Input
-                  placeholder="Ilagay ang tinatayang dami (hal. 500 kilo, 200 ulo)"
+                  placeholder="hal. 500 kilo, 200 ulo"
                   value={form.expected_volume}
                   onChange={(e) => update("expected_volume", e.target.value)}
-                  className="min-h-[52px] text-base mt-2"
+                  className="min-h-[52px] text-base"
                 />
               </div>
             </>
           )}
 
-          {/* Step 5: Location */}
+          {/* Location */}
           <div className="space-y-3">
             {isPlanting && <Label className="text-base font-bold">Lokasyon</Label>}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="region" className="text-base">Rehiyon</Label>
-                <Input id="region" value={form.region} onChange={(e) => update("region", e.target.value)} className="min-h-[52px] text-base" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="province" className="text-base">Lalawigan</Label>
-                <Input id="province" value={form.province} onChange={(e) => update("province", e.target.value)} className="min-h-[52px] text-base" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="municipality" className="text-base">Bayan</Label>
-                <Input id="municipality" value={form.municipality} onChange={(e) => update("municipality", e.target.value)} className="min-h-[52px] text-base" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="barangay" className="text-base">Barangay</Label>
-                <Input id="barangay" value={form.barangay} onChange={(e) => update("barangay", e.target.value)} className="min-h-[52px] text-base" />
-              </div>
-            </div>
+            <LocationDropdowns value={location} onChange={setLocation} />
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="lat" className="text-base">Latitude *</Label>
@@ -507,7 +515,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
             </Button>
           </div>
 
-          {/* Step 6: Reporter info (planting only) */}
+          {/* Reporter info (planting only) */}
           {isPlanting && (
             <div className="grid grid-cols-1 gap-3">
               <div className="space-y-2">
@@ -521,7 +529,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
             </div>
           )}
 
-          {/* Step 7: Notes */}
+          {/* Notes */}
           <div className="space-y-2">
             <Label htmlFor="notes" className="text-base">Mga Tala</Label>
             <Textarea
