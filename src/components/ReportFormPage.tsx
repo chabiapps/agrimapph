@@ -21,23 +21,29 @@ type RecordType = "current_supply" | "planting_intention";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
+const nonEmpty = (label: string) => z.string().trim().min(1, { message: `${label} ay kailangan` }).max(100);
+
 const harvestSchema = z.object({
-  commodity: z.string().trim().min(1).max(100),
+  commodity: nonEmpty("Produkto"),
   price: z.coerce.number().min(0).max(100000),
   status: z.enum(["surplus", "deficit", "balanced"]),
-  region: z.string().trim().max(100).optional().or(z.literal("")),
-  province: z.string().trim().max(100).optional().or(z.literal("")),
-  municipality: z.string().trim().max(100).optional().or(z.literal("")),
-  barangay: z.string().trim().max(100).optional().or(z.literal("")),
+  region: nonEmpty("Rehiyon"),
+  province: nonEmpty("Probinsya"),
+  municipality: nonEmpty("Munisipyo"),
+  barangay: nonEmpty("Barangay"),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
   notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
 const plantingSchema = z.object({
-  commodity: z.string().trim().min(1).max(100),
+  commodity: nonEmpty("Produkto"),
   planted_date: z.string().min(1),
   expected_harvest_date: z.string().min(1),
+  region: nonEmpty("Rehiyon"),
+  province: nonEmpty("Probinsya"),
+  municipality: nonEmpty("Munisipyo"),
+  barangay: nonEmpty("Barangay"),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
 });
