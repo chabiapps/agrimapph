@@ -204,14 +204,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     }
 
     // Planting intention
-    const parsed = plantingSchema.safeParse(form);
+    const parsed = plantingSchema.safeParse(normalized);
     if (!parsed.success) {
       setSubmitting(false);
-      toast({ title: "Kulang ang detalye", description: "Pakikumpleto ang produkto, petsa at lokasyon.", variant: "destructive" });
+      toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
       return;
     }
-    const user = await ensureUser();
-    if (!user) { setSubmitting(false); toast({ title: "Submission failed", variant: "destructive" }); return; }
     const d = parsed.data;
     const volumeCombined = [form.volume_level, form.expected_volume].filter(Boolean).join(" — ") || null;
     const notesCombined = [
@@ -228,11 +226,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       expected_harvest_date: d.expected_harvest_date,
       expected_volume: volumeCombined,
       growth_stage: form.growth_stage || null,
-      region: form.region || null, province: form.province || null,
-      municipality: form.municipality || null, barangay: form.barangay || null,
+      region: d.region, province: d.province,
+      municipality: d.municipality, barangay: d.barangay,
       lat: d.lat, lng: d.lng,
       notes: notesCombined,
       reported_by: user.id,
+      user_id: user.id,
     };
     console.log("[agri_reports] INSERT planting_intention payload:", plantingPayload);
     const { data: insData, error } = await supabase.from("agri_reports").insert(plantingPayload).select();
@@ -240,7 +239,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     setSubmitting(false);
     if (error) {
       console.error("[agri_reports] INSERT error:", error);
-      return toast({ title: "Submission failed", description: error.message, variant: "destructive" });
+      return toast({ title: "Submission failed", description: `${error.message}${error.details ? ` — ${error.details}` : ""}${error.hint ? ` (${error.hint})` : ""}`, variant: "destructive" });
     }
     toast({
       title: "Salamat!",
