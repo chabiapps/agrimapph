@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ interface Props {
 
 const AuthModal = ({ open, onOpenChange, initialMode = "login" }: Props) => {
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
+  useEffect(() => { if (open) setMode(initialMode); }, [open, initialMode]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
