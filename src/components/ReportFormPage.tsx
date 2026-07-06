@@ -171,18 +171,24 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const volumeStr = isAnimal
         ? [form.heads && `${form.heads} ulo`, form.weight && `${form.weight} kg`].filter(Boolean).join(", ") || null
         : null;
-      const { error } = await supabase.from("agri_reports").insert({
+      const insertPayload = {
         record_type: "current_supply",
-        commodity: d.commodity, category, subcategory: d.commodity,
+        category, subcategory: d.commodity,
         price: d.price, status: d.status,
         region: d.region || null, province: d.province || null,
         municipality: d.municipality || null, barangay: d.barangay || null,
         lat: d.lat, lng: d.lng, notes: d.notes || null, volume: volumeStr,
         planted_date: isFish ? form.date_caught : null,
         reported_by: user.id,
-      });
+      };
+      console.log("[agri_reports] INSERT current_supply payload:", insertPayload);
+      const { data: insData, error } = await supabase.from("agri_reports").insert(insertPayload).select();
+      console.log("[agri_reports] INSERT current_supply response:", { insData, error });
       setSubmitting(false);
-      if (error) return toast({ title: "Submission failed", description: error.message, variant: "destructive" });
+      if (error) {
+        console.error("[agri_reports] INSERT error:", error);
+        return toast({ title: "Submission failed", description: error.message, variant: "destructive" });
+      }
       toast({ title: "Salamat!", description: "Naipadala ang ulat." });
       onSubmitted?.("current_supply");
       setForm((f) => ({ ...f, commodity: "", price: "", notes: "" }));
@@ -206,9 +212,9 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       form.notes,
     ].filter(Boolean).join("\n") || null;
 
-    const { error } = await supabase.from("agri_reports").insert({
+    const plantingPayload = {
       record_type: "planting_intention",
-      commodity: d.commodity, category, subcategory: d.commodity,
+      category, subcategory: d.commodity,
       status: "balanced",
       planted_date: d.planted_date,
       expected_harvest_date: d.expected_harvest_date,
@@ -219,9 +225,15 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       lat: d.lat, lng: d.lng,
       notes: notesCombined,
       reported_by: user.id,
-    });
+    };
+    console.log("[agri_reports] INSERT planting_intention payload:", plantingPayload);
+    const { data: insData, error } = await supabase.from("agri_reports").insert(plantingPayload).select();
+    console.log("[agri_reports] INSERT planting_intention response:", { insData, error });
     setSubmitting(false);
-    if (error) return toast({ title: "Submission failed", description: error.message, variant: "destructive" });
+    if (error) {
+      console.error("[agri_reports] INSERT error:", error);
+      return toast({ title: "Submission failed", description: error.message, variant: "destructive" });
+    }
     toast({
       title: "Salamat!",
       description: "Nai-record na ang iyong Paparating na ani. Aabisuhan ka namin kung malapit na ang iyong inaasahang ani.",

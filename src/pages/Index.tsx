@@ -47,29 +47,24 @@ const Index = () => {
   const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
 
   const fetchReports = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data, error, status, statusText } = await supabase
       .from("agri_reports")
-      .select("id, lat, lng, status, region, province, municipality, barangay, commodity, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory");
+      .select("id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory");
 
+    console.log("[agri_reports] URL host:", "gnrhciktvgokhipvsvcq.supabase.co");
+    console.log("[agri_reports] http status:", status, statusText);
     console.log("[agri_reports] raw response:", { data, error });
     console.log("[agri_reports] total rows:", data?.length ?? 0);
-    console.log(
-      "[agri_reports] by record_type:",
-      data?.reduce<Record<string, number>>((acc, r) => {
-        const k = r.record_type ?? "null";
-        acc[k] = (acc[k] ?? 0) + 1;
-        return acc;
-      }, {})
-    );
-    if (data?.length) {
-      const sample = data[0];
-      console.log("[agri_reports] sample row lat/lng types:", typeof sample.lat, typeof sample.lng, "values:", sample.lat, sample.lng);
-    }
     if (error) {
-      console.error("[agri_reports] SELECT error (possible RLS block):", error);
+      console.error("[agri_reports] SELECT error:", error);
+      return;
     }
-
-    if (!error && data) setReports(data as AgriReport[]);
+    if (data) {
+      // DB has no `commodity` column — derive it from subcategory for downstream UI.
+      const mapped = data.map((r) => ({ ...r, commodity: r.subcategory ?? null })) as AgriReport[];
+      console.log("[agri_reports] sample mapped row:", mapped[0]);
+      setReports(mapped);
+    }
   }, []);
 
   useEffect(() => {
