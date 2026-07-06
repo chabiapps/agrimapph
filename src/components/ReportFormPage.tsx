@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,23 +21,29 @@ type RecordType = "current_supply" | "planting_intention";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
+const nonEmpty = (label: string) => z.string().trim().min(1, { message: `${label} ay kailangan` }).max(100);
+
 const harvestSchema = z.object({
-  commodity: z.string().trim().min(1).max(100),
+  commodity: nonEmpty("Produkto"),
   price: z.coerce.number().min(0).max(100000),
   status: z.enum(["surplus", "deficit", "balanced"]),
-  region: z.string().trim().max(100).optional().or(z.literal("")),
-  province: z.string().trim().max(100).optional().or(z.literal("")),
-  municipality: z.string().trim().max(100).optional().or(z.literal("")),
-  barangay: z.string().trim().max(100).optional().or(z.literal("")),
+  region: nonEmpty("Rehiyon"),
+  province: nonEmpty("Probinsya"),
+  municipality: nonEmpty("Munisipyo"),
+  barangay: nonEmpty("Barangay"),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
   notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
 const plantingSchema = z.object({
-  commodity: z.string().trim().min(1).max(100),
+  commodity: nonEmpty("Produkto"),
   planted_date: z.string().min(1),
   expected_harvest_date: z.string().min(1),
+  region: nonEmpty("Rehiyon"),
+  province: nonEmpty("Probinsya"),
+  municipality: nonEmpty("Munisipyo"),
+  barangay: nonEmpty("Barangay"),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
 });
@@ -94,6 +101,7 @@ const VOLUME_LEVELS = [
 
 const ReportFormPage = ({ onSubmitted }: Props) => {
   const { t } = useLang();
+  const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [recordType, setRecordType] = useState<RecordType>("current_supply");
   const [category, setCategory] = useState<CategoryKey>("crops");
@@ -136,16 +144,6 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     return weeks;
   }, [form.expected_harvest_date]);
 
-  const ensureUser = async () => {
-    let { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      const { data: anon, error: anonErr } = await supabase.auth.signInAnonymously();
-      if (anonErr || !anon.user) return null;
-      user = anon.user;
-    }
-    return user;
-  };
-
   const changeCategory = (k: CategoryKey) => {
     setCategory(k);
     update("commodity", "");
@@ -154,17 +152,26 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast({ title: "Mag-login muna", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
 
+    // Default lat/lng to 0 when not provided so insert doesn't fail on null.
+    const normalized = {
+      ...form,
+      lat: form.lat.trim() === "" ? "0" : form.lat,
+      lng: form.lng.trim() === "" ? "0" : form.lng,
+    };
+
     if (!isPlanting) {
-      const parsed = harvestSchema.safeParse(form);
+      const parsed = harvestSchema.safeParse(normalized);
       if (!parsed.success) {
         setSubmitting(false);
-        toast({ title: "Invalid input", description: parsed.error.issues[0].message, variant: "destructive" });
+        toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
         return;
       }
-      const user = await ensureUser();
-      if (!user) { setSubmitting(false); toast({ title: "Submission failed", variant: "destructive" }); return; }
       const d = parsed.data;
       const isAnimal = category === "poultry" || category === "livestock";
       const isFish = category === "fish";
@@ -175,19 +182,20 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         record_type: "current_supply",
         category, subcategory: d.commodity,
         price: d.price, status: d.status,
-        region: d.region || null, province: d.province || null,
-        municipality: d.municipality || null, barangay: d.barangay || null,
+        region: d.region, province: d.province,
+        municipality: d.municipality, barangay: d.barangay,
         lat: d.lat, lng: d.lng, notes: d.notes || null, volume: volumeStr,
         planted_date: isFish ? form.date_caught : null,
         reported_by: user.id,
+        user_id: user.id,
       };
       console.log("[agri_reports] INSERT current_supply payload:", insertPayload);
-      const { data: insData, error } = await supabase.from("agri_reports").insert(insertPayload).select();
+      const { data: insData, error } = await supabase.from("agri_reports").insert(insertPayload as never).select();
       console.log("[agri_reports] INSERT current_supply response:", { insData, error });
       setSubmitting(false);
       if (error) {
         console.error("[agri_reports] INSERT error:", error);
-        return toast({ title: "Submission failed", description: error.message, variant: "destructive" });
+        return toast({ title: "Submission failed", description: `${error.message}${error.details ? ` — ${error.details}` : ""}${error.hint ? ` (${error.hint})` : ""}`, variant: "destructive" });
       }
       toast({ title: "Salamat!", description: "Naipadala ang ulat." });
       onSubmitted?.("current_supply");
@@ -196,14 +204,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     }
 
     // Planting intention
-    const parsed = plantingSchema.safeParse(form);
+    const parsed = plantingSchema.safeParse(normalized);
     if (!parsed.success) {
       setSubmitting(false);
-      toast({ title: "Kulang ang detalye", description: "Pakikumpleto ang produkto, petsa at lokasyon.", variant: "destructive" });
+      toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
       return;
     }
-    const user = await ensureUser();
-    if (!user) { setSubmitting(false); toast({ title: "Submission failed", variant: "destructive" }); return; }
     const d = parsed.data;
     const volumeCombined = [form.volume_level, form.expected_volume].filter(Boolean).join(" — ") || null;
     const notesCombined = [
@@ -220,19 +226,20 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       expected_harvest_date: d.expected_harvest_date,
       expected_volume: volumeCombined,
       growth_stage: form.growth_stage || null,
-      region: form.region || null, province: form.province || null,
-      municipality: form.municipality || null, barangay: form.barangay || null,
+      region: d.region, province: d.province,
+      municipality: d.municipality, barangay: d.barangay,
       lat: d.lat, lng: d.lng,
       notes: notesCombined,
       reported_by: user.id,
+      user_id: user.id,
     };
     console.log("[agri_reports] INSERT planting_intention payload:", plantingPayload);
-    const { data: insData, error } = await supabase.from("agri_reports").insert(plantingPayload).select();
+    const { data: insData, error } = await supabase.from("agri_reports").insert(plantingPayload as never).select();
     console.log("[agri_reports] INSERT planting_intention response:", { insData, error });
     setSubmitting(false);
     if (error) {
       console.error("[agri_reports] INSERT error:", error);
-      return toast({ title: "Submission failed", description: error.message, variant: "destructive" });
+      return toast({ title: "Submission failed", description: `${error.message}${error.details ? ` — ${error.details}` : ""}${error.hint ? ` (${error.hint})` : ""}`, variant: "destructive" });
     }
     toast({
       title: "Salamat!",

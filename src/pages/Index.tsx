@@ -8,6 +8,9 @@ import LanguageToggle from "@/components/LanguageToggle";
 import ReportFormPage from "@/components/ReportFormPage";
 import BottomNav, { Tab } from "@/components/BottomNav";
 import MapFilterSheet from "@/components/MapFilterSheet";
+import AuthGate from "@/components/AuthGate";
+import { useAuth } from "@/lib/AuthContext";
+import { LogOut } from "lucide-react";
 import { CategoryKey, inferCategory } from "@/lib/categories";
 
 interface AgriReport {
@@ -206,17 +209,37 @@ const Index = () => {
         )}
 
         {tab === "report" && (
-          <ReportFormPage onSubmitted={(rt) => {
-            fetchReports();
-            if (rt === "planting_intention") setMapMode("planting_intention");
-            setTab("map");
-          }} />
-
+          <AuthGate>
+            <ReportFormPage onSubmitted={(rt) => {
+              fetchReports();
+              if (rt === "planting_intention") setMapMode("planting_intention");
+              setTab("map");
+            }} />
+          </AuthGate>
         )}
       </main>
 
+      <UserBadge />
       <BottomNav tab={tab} onChange={setTab} />
     </div>
+  );
+};
+
+const UserBadge = () => {
+  const { user, signOut } = useAuth();
+  if (!user) return null;
+  const initial = (user.email ?? "?").charAt(0).toUpperCase();
+  return (
+    <button
+      onClick={signOut}
+      title="Mag-logout"
+      className="fixed top-3 right-16 z-[1002] flex items-center gap-2 bg-card/95 backdrop-blur border border-border rounded-full pl-1 pr-3 py-1 shadow-lg hover:bg-muted transition-colors"
+    >
+      <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground grid place-items-center font-bold text-sm">
+        {initial}
+      </span>
+      <LogOut className="w-4 h-4 text-foreground/70" />
+    </button>
   );
 };
 
