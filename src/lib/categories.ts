@@ -154,4 +154,4 @@ export const getCommodityIcon = (
     if (icon) return icon;
   }
   return CATEGORY_FALLBACK[category?.toLowerCase() ?? ""] ?? "🌿";
-};;
+};
