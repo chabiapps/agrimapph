@@ -144,16 +144,6 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     return weeks;
   }, [form.expected_harvest_date]);
 
-  const ensureUser = async () => {
-    let { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      const { data: anon, error: anonErr } = await supabase.auth.signInAnonymously();
-      if (anonErr || !anon.user) return null;
-      user = anon.user;
-    }
-    return user;
-  };
-
   const changeCategory = (k: CategoryKey) => {
     setCategory(k);
     update("commodity", "");
@@ -162,17 +152,26 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast({ title: "Mag-login muna", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
 
+    // Default lat/lng to 0 when not provided so insert doesn't fail on null.
+    const normalized = {
+      ...form,
+      lat: form.lat.trim() === "" ? "0" : form.lat,
+      lng: form.lng.trim() === "" ? "0" : form.lng,
+    };
+
     if (!isPlanting) {
-      const parsed = harvestSchema.safeParse(form);
+      const parsed = harvestSchema.safeParse(normalized);
       if (!parsed.success) {
         setSubmitting(false);
-        toast({ title: "Invalid input", description: parsed.error.issues[0].message, variant: "destructive" });
+        toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
         return;
       }
-      const user = await ensureUser();
-      if (!user) { setSubmitting(false); toast({ title: "Submission failed", variant: "destructive" }); return; }
       const d = parsed.data;
       const isAnimal = category === "poultry" || category === "livestock";
       const isFish = category === "fish";
@@ -183,11 +182,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         record_type: "current_supply",
         category, subcategory: d.commodity,
         price: d.price, status: d.status,
-        region: d.region || null, province: d.province || null,
-        municipality: d.municipality || null, barangay: d.barangay || null,
+        region: d.region, province: d.province,
+        municipality: d.municipality, barangay: d.barangay,
         lat: d.lat, lng: d.lng, notes: d.notes || null, volume: volumeStr,
         planted_date: isFish ? form.date_caught : null,
         reported_by: user.id,
+        user_id: user.id,
       };
       console.log("[agri_reports] INSERT current_supply payload:", insertPayload);
       const { data: insData, error } = await supabase.from("agri_reports").insert(insertPayload).select();
@@ -195,7 +195,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       setSubmitting(false);
       if (error) {
         console.error("[agri_reports] INSERT error:", error);
-        return toast({ title: "Submission failed", description: error.message, variant: "destructive" });
+        return toast({ title: "Submission failed", description: `${error.message}${error.details ? ` — ${error.details}` : ""}${error.hint ? ` (${error.hint})` : ""}`, variant: "destructive" });
       }
       toast({ title: "Salamat!", description: "Naipadala ang ulat." });
       onSubmitted?.("current_supply");
