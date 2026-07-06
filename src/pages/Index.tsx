@@ -8,6 +8,9 @@ import LanguageToggle from "@/components/LanguageToggle";
 import ReportFormPage from "@/components/ReportFormPage";
 import BottomNav, { Tab } from "@/components/BottomNav";
 import MapFilterSheet from "@/components/MapFilterSheet";
+import AuthGate from "@/components/AuthGate";
+import { useAuth } from "@/lib/AuthContext";
+import { LogOut } from "lucide-react";
 import { CategoryKey, inferCategory } from "@/lib/categories";
 
 interface AgriReport {
