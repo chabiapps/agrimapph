@@ -190,7 +190,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         user_id: user.id,
       };
       console.log("[agri_reports] INSERT current_supply payload:", insertPayload);
-      const { data: insData, error } = await supabase.from("agri_reports").insert(insertPayload).select();
+      const { data: insData, error } = await supabase.from("agri_reports").insert(insertPayload as never).select();
       console.log("[agri_reports] INSERT current_supply response:", { insData, error });
       setSubmitting(false);
       if (error) {
@@ -234,7 +234,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       user_id: user.id,
     };
     console.log("[agri_reports] INSERT planting_intention payload:", plantingPayload);
-    const { data: insData, error } = await supabase.from("agri_reports").insert(plantingPayload).select();
+    const { data: insData, error } = await supabase.from("agri_reports").insert(plantingPayload as never).select();
     console.log("[agri_reports] INSERT planting_intention response:", { insData, error });
     setSubmitting(false);
     if (error) {
