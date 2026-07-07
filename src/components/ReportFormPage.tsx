@@ -518,7 +518,28 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
           {/* Location */}
           <div className="space-y-3">
             {isPlanting && <Label className="text-base font-bold">Lokasyon</Label>}
-            <LocationDropdowns value={location} onChange={setLocation} />
+            <LocationDropdowns
+              value={location}
+              onChange={(v) => {
+                setLocation(v);
+                setLocErrors((prev) => {
+                  const next = { ...prev };
+                  if (v.region) delete next.region;
+                  if (v.province) delete next.province;
+                  if (v.municipality) delete next.municipality;
+                  if (v.barangay) delete next.barangay;
+                  return next;
+                });
+              }}
+            />
+            {(locErrors.region || locErrors.province || locErrors.municipality || locErrors.barangay) && (
+              <ul className="text-sm text-destructive font-medium space-y-0.5 mt-1">
+                {locErrors.region && <li>• {locErrors.region}</li>}
+                {locErrors.province && <li>• {locErrors.province}</li>}
+                {locErrors.municipality && <li>• {locErrors.municipality}</li>}
+                {locErrors.barangay && <li>• {locErrors.barangay}</li>}
+              </ul>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="lat" className="text-base">Latitude *</Label>
