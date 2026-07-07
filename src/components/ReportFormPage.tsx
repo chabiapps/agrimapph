@@ -219,7 +219,9 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const { error } = await supabase.from("agri_reports").insert(insertPayload as never).select();
       setSubmitting(false);
       if (error) {
-        return toast({ title: "Submission failed", description: `${error.message}${error.details ? ` — ${error.details}` : ""}`, variant: "destructive" });
+        const msg = `${error.message}${error.details ? ` — ${error.details}` : ""}${error.hint ? ` (${error.hint})` : ""}`;
+        setSubmitError(msg);
+        return toast({ title: "Submission failed", description: msg, variant: "destructive" });
       }
       toast({ title: "Salamat!", description: "Naipadala ang ulat." });
       onSubmitted?.("current_supply");
