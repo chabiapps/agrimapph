@@ -133,8 +133,9 @@ const LocationDropdowns = ({ value, onChange }: Props) => {
   const [loadingBrgy, setLoadingBrgy] = useState(false);
 
   const regionOptions: GeoItem[] = REGIONS.map((r) => ({ code: r.code, name: r.name }));
-  const provinceOptions: GeoItem[] = value.region
-    ? getProvinces(value.region).map((p) => ({ code: p.code, name: p.name }))
+  const currentRegion = REGIONS.find((r) => r.name === value.region);
+  const provinceOptions: GeoItem[] = currentRegion
+    ? getProvinces(currentRegion.code).map((p) => ({ code: p.code, name: p.name }))
     : [];
 
   useEffect(() => {
