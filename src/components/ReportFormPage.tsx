@@ -115,6 +115,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   const [category, setCategory] = useState<CategoryKey>("crops");
   const [location, setLocation] = useState<LocationValue>(emptyLocation());
   const [volumeError, setVolumeError] = useState(false);
+  const [locErrors, setLocErrors] = useState<{ region?: string; province?: string; municipality?: string; barangay?: string }>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [form, setForm] = useState({
     commodity: "",
     price: "",
@@ -157,8 +159,21 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
     if (!user) {
       toast({ title: "Mag-login muna", variant: "destructive" });
+      return;
+    }
+
+    // Inline location validation
+    const locErr: typeof locErrors = {};
+    if (!location.region) locErr.region = "Piliin ang rehiyon";
+    if (!location.province) locErr.province = "Piliin ang lalawigan";
+    if (!location.municipality) locErr.municipality = "Piliin ang bayan/lungsod";
+    if (!location.barangay) locErr.barangay = "Piliin ang barangay";
+    setLocErrors(locErr);
+    if (Object.keys(locErr).length > 0) {
+      toast({ title: "Kulang ang lokasyon", description: Object.values(locErr)[0], variant: "destructive" });
       return;
     }
 
@@ -204,7 +219,9 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const { error } = await supabase.from("agri_reports").insert(insertPayload as never).select();
       setSubmitting(false);
       if (error) {
-        return toast({ title: "Submission failed", description: `${error.message}${error.details ? ` — ${error.details}` : ""}`, variant: "destructive" });
+        const msg = `${error.message}${error.details ? ` — ${error.details}` : ""}${error.hint ? ` (${error.hint})` : ""}`;
+        setSubmitError(msg);
+        return toast({ title: "Submission failed", description: msg, variant: "destructive" });
       }
       toast({ title: "Salamat!", description: "Naipadala ang ulat." });
       onSubmitted?.("current_supply");
@@ -243,7 +260,9 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     const { error } = await supabase.from("agri_reports").insert(plantingPayload as never).select();
     setSubmitting(false);
     if (error) {
-      return toast({ title: "Submission failed", description: `${error.message}${error.details ? ` — ${error.details}` : ""}`, variant: "destructive" });
+      const msg = `${error.message}${error.details ? ` — ${error.details}` : ""}${error.hint ? ` (${error.hint})` : ""}`;
+      setSubmitError(msg);
+      return toast({ title: "Submission failed", description: msg, variant: "destructive" });
     }
     toast({
       title: "Salamat!",
@@ -499,7 +518,28 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
           {/* Location */}
           <div className="space-y-3">
             {isPlanting && <Label className="text-base font-bold">Lokasyon</Label>}
-            <LocationDropdowns value={location} onChange={setLocation} />
+            <LocationDropdowns
+              value={location}
+              onChange={(v) => {
+                setLocation(v);
+                setLocErrors((prev) => {
+                  const next = { ...prev };
+                  if (v.region) delete next.region;
+                  if (v.province) delete next.province;
+                  if (v.municipality) delete next.municipality;
+                  if (v.barangay) delete next.barangay;
+                  return next;
+                });
+              }}
+            />
+            {(locErrors.region || locErrors.province || locErrors.municipality || locErrors.barangay) && (
+              <ul className="text-sm text-destructive font-medium space-y-0.5 mt-1">
+                {locErrors.region && <li>• {locErrors.region}</li>}
+                {locErrors.province && <li>• {locErrors.province}</li>}
+                {locErrors.municipality && <li>• {locErrors.municipality}</li>}
+                {locErrors.barangay && <li>• {locErrors.barangay}</li>}
+              </ul>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="lat" className="text-base">Latitude *</Label>
@@ -541,6 +581,13 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
               placeholder={isPlanting ? "Halimbawa: Organic ang aking pagtatanim. May sakit ang ilang halaman. Etc." : ""}
             />
           </div>
+
+          {submitError && (
+            <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+              <p className="font-semibold mb-0.5">Hindi naipadala — Supabase error:</p>
+              <p className="font-mono break-words whitespace-pre-wrap">{submitError}</p>
+            </div>
+          )}
 
           <Button
             type="submit"
