@@ -582,6 +582,13 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
             />
           </div>
 
+          {submitError && (
+            <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+              <p className="font-semibold mb-0.5">Hindi naipadala — Supabase error:</p>
+              <p className="font-mono break-words whitespace-pre-wrap">{submitError}</p>
+            </div>
+          )}
+
           <Button
             type="submit"
             disabled={submitting}
