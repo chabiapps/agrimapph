@@ -159,8 +159,21 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
     if (!user) {
       toast({ title: "Mag-login muna", variant: "destructive" });
+      return;
+    }
+
+    // Inline location validation
+    const locErr: typeof locErrors = {};
+    if (!location.region) locErr.region = "Piliin ang rehiyon";
+    if (!location.province) locErr.province = "Piliin ang lalawigan";
+    if (!location.municipality) locErr.municipality = "Piliin ang bayan/lungsod";
+    if (!location.barangay) locErr.barangay = "Piliin ang barangay";
+    setLocErrors(locErr);
+    if (Object.keys(locErr).length > 0) {
+      toast({ title: "Kulang ang lokasyon", description: Object.values(locErr)[0], variant: "destructive" });
       return;
     }
 
