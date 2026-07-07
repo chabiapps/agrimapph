@@ -115,6 +115,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   const [category, setCategory] = useState<CategoryKey>("crops");
   const [location, setLocation] = useState<LocationValue>(emptyLocation());
   const [volumeError, setVolumeError] = useState(false);
+  const [locErrors, setLocErrors] = useState<{ region?: string; province?: string; municipality?: string; barangay?: string }>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [form, setForm] = useState({
     commodity: "",
     price: "",
