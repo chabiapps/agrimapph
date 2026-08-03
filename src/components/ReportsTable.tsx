@@ -53,12 +53,11 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => {
     if (!sortKey) return reports;
     const rows = [...reports];
     rows.sort((a, b) => {
-      const av = sortKey === "record_type"
-        ? (a.record_type ?? "current_supply")
-        : (a as Record<string, unknown>)[sortKey];
-      const bv = sortKey === "record_type"
-        ? (b.record_type ?? "current_supply")
-        : (b as Record<string, unknown>)[sortKey];
+      const pick = (r: AgriReport) => sortKey === "record_type"
+        ? (r.record_type ?? "current_supply")
+        : (r as unknown as Record<string, unknown>)[sortKey];
+      const av = pick(a);
+      const bv = pick(b);
       if (av == null && bv == null) return 0;
       if (av == null) return 1;
       if (bv == null) return -1;
