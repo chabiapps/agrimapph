@@ -428,8 +428,18 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
           {!isPlanting && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="price" className="text-base">Presyo (₱/kg) *</Label>
-                <Input id="price" type="number" step="0.01" value={form.price} onChange={(e) => update("price", e.target.value)} className="min-h-[52px] text-base" required />
+                <Label htmlFor="price" className="text-base">{priceMeta.label} *</Label>
+                <div className="flex gap-2">
+                  <Input id="price" type="number" step="0.01" value={form.price} onChange={(e) => update("price", e.target.value)} className="min-h-[52px] text-base flex-1" required />
+                  <Select value={priceUnit} onValueChange={(v) => setUnitOverride(v as PriceUnit)}>
+                    <SelectTrigger className="min-h-[52px] text-base w-[110px]" aria-label="Yunit ng presyo"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PRICE_UNITS.map((u) => (
+                        <SelectItem key={u} value={u} className="text-base">{u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-base">Kalagayan *</Label>
