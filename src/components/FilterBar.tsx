@@ -53,9 +53,9 @@ const FilterBar = ({
       </Select>
       <div className="flex gap-2 w-full">
         {([
-          { value: "surplus", label: `${t("surplus")} (Surplus)`, cls: "bg-green-600 hover:bg-green-700 text-white border-green-700", ring: "ring-4 ring-green-300" },
-          { value: "deficit", label: `${t("deficit")} (Deficit)`, cls: "bg-red-600 hover:bg-red-700 text-white border-red-700", ring: "ring-4 ring-red-300" },
-          { value: "balanced", label: `${t("balanced")} (Balanced)`, cls: "bg-yellow-500 hover:bg-yellow-600 text-black border-yellow-600", ring: "ring-4 ring-yellow-300" },
+          { value: "surplus", label: t("surplus"), cls: "bg-green-600 hover:bg-green-700 text-white border-green-700", ring: "ring-4 ring-green-300" },
+          { value: "deficit", label: t("deficit"), cls: "bg-red-600 hover:bg-red-700 text-white border-red-700", ring: "ring-4 ring-red-300" },
+          { value: "balanced", label: t("balanced"), cls: "bg-yellow-500 hover:bg-yellow-600 text-black border-yellow-600", ring: "ring-4 ring-yellow-300" },
         ] as const).map((b) => {
           const isActive = status === b.value;
           return (

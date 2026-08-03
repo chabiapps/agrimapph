@@ -33,7 +33,7 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => {
   const { t } = useLang();
   return (
   <div className="h-full w-full overflow-auto bg-background p-4">
-    <Table>
+    <Table className="min-w-[1100px] whitespace-nowrap">
       <TableHeader>
         <TableRow>
           <TableHead>Type</TableHead>
