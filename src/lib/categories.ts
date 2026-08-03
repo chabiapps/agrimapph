@@ -155,3 +155,39 @@ export const getCommodityIcon = (
   }
   return CATEGORY_FALLBACK[category?.toLowerCase() ?? ""] ?? "🌿";
 };
+
+export const PRICE_UNITS = ["kg", "liter", "piraso", "sako", "ulo", "bundle"] as const;
+export type PriceUnit = (typeof PRICE_UNITS)[number];
+
+const norm = (s?: string | null) => (s ?? "").toLowerCase().trim();
+
+const SACK_CROPS = ["rice", "palay", "corn", "mais", "bigas"];
+const EGGS = ["chicken eggs", "itlog ng manok", "duck eggs (balut)", "itlog ng pato", "balut", "itlog", "eggs"];
+const MILK = ["fresh milk", "carabao milk", "gatas ng kalabaw", "gatas ng kambing", "goat milk", "milk", "gatas"];
+const CHEESE = ["cheese", "kesong puti", "keso"];
+
+/** Dynamic price label + default unit based on category & commodity. */
+export const getPriceMeta = (
+  category?: string | null,
+  subcategory?: string | null
+): { label: string; unit: PriceUnit } => {
+  const c = norm(category);
+  const s = norm(subcategory);
+
+  if (c === "crops") {
+    if (SACK_CROPS.includes(s)) return { label: "Presyo (₱/sako o ₱/kg)", unit: "sako" };
+    return { label: "Presyo (₱/kg)", unit: "kg" };
+  }
+  if (c === "fish") return { label: "Presyo (₱/kg)", unit: "kg" };
+  if (c === "poultry") {
+    if (EGGS.includes(s)) return { label: "Presyo (₱/piraso)", unit: "piraso" };
+    return { label: "Presyo (₱/kg o ₱/ulo)", unit: "kg" };
+  }
+  if (c === "livestock") return { label: "Presyo (₱/kg o ₱/ulo)", unit: "kg" };
+  if (c === "dairy") {
+    if (CHEESE.includes(s)) return { label: "Presyo (₱/kg)", unit: "kg" };
+    if (MILK.includes(s)) return { label: "Presyo (₱/liter)", unit: "liter" };
+    return { label: "Presyo (₱/liter)", unit: "liter" };
+  }
+  return { label: "Presyo (₱)", unit: "kg" };
+};

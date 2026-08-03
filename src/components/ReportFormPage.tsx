@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/i18n";
-import { CATEGORIES, CategoryKey, getCommodityIcon } from "@/lib/categories";
+import { CATEGORIES, CategoryKey, getCommodityIcon, getPriceMeta, PRICE_UNITS, PriceUnit } from "@/lib/categories";
 import LocationDropdowns, { LocationValue } from "@/components/LocationDropdowns";
 
 interface Props {
@@ -144,6 +144,13 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     [category]
   );
 
+  const priceMeta = useMemo(
+    () => getPriceMeta(category, form.commodity),
+    [category, form.commodity]
+  );
+  const [unitOverride, setUnitOverride] = useState<PriceUnit | null>(null);
+  const priceUnit: PriceUnit = unitOverride ?? priceMeta.unit;
+
   const weeksFromNow = useMemo(() => {
     if (!form.expected_harvest_date) return null;
     const diff = new Date(form.expected_harvest_date).getTime() - Date.now();
@@ -153,6 +160,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
 
   const changeCategory = (k: CategoryKey) => {
     setCategory(k);
+    setUnitOverride(null);
     update("commodity", "");
     update("growth_stage", "");
   };
@@ -209,7 +217,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const insertPayload = {
         record_type: "current_supply",
         category, subcategory: d.commodity,
-        price: d.price, status: d.status,
+        price: d.price, price_unit: priceUnit, status: d.status,
         region: d.region, province: d.province,
         municipality: d.municipality, barangay: d.barangay,
         lat: d.lat, lng: d.lng, notes: d.notes || null, volume: volumeStr,
@@ -420,8 +428,18 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
           {!isPlanting && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="price" className="text-base">Presyo (₱/kg) *</Label>
-                <Input id="price" type="number" step="0.01" value={form.price} onChange={(e) => update("price", e.target.value)} className="min-h-[52px] text-base" required />
+                <Label htmlFor="price" className="text-base">{priceMeta.label} *</Label>
+                <div className="flex gap-2">
+                  <Input id="price" type="number" step="0.01" value={form.price} onChange={(e) => update("price", e.target.value)} className="min-h-[52px] text-base flex-1" required />
+                  <Select value={priceUnit} onValueChange={(v) => setUnitOverride(v as PriceUnit)}>
+                    <SelectTrigger className="min-h-[52px] text-base w-[110px]" aria-label="Yunit ng presyo"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PRICE_UNITS.map((u) => (
+                        <SelectItem key={u} value={u} className="text-base">{u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-base">Kalagayan *</Label>
