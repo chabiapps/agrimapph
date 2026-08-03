@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/i18n";
-import { CATEGORIES, CategoryKey, getCommodityIcon } from "@/lib/categories";
+import { CATEGORIES, CategoryKey, getCommodityIcon, getPriceMeta, PRICE_UNITS, PriceUnit } from "@/lib/categories";
 import LocationDropdowns, { LocationValue } from "@/components/LocationDropdowns";
 
 interface Props {
