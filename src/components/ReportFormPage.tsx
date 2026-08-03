@@ -144,6 +144,13 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     [category]
   );
 
+  const priceMeta = useMemo(
+    () => getPriceMeta(category, form.commodity),
+    [category, form.commodity]
+  );
+  const [unitOverride, setUnitOverride] = useState<PriceUnit | null>(null);
+  const priceUnit: PriceUnit = unitOverride ?? priceMeta.unit;
+
   const weeksFromNow = useMemo(() => {
     if (!form.expected_harvest_date) return null;
     const diff = new Date(form.expected_harvest_date).getTime() - Date.now();
@@ -153,6 +160,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
 
   const changeCategory = (k: CategoryKey) => {
     setCategory(k);
+    setUnitOverride(null);
     update("commodity", "");
     update("growth_stage", "");
   };
