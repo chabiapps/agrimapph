@@ -217,7 +217,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const insertPayload = {
         record_type: "current_supply",
         category, subcategory: d.commodity,
-        price: d.price, status: d.status,
+        price: d.price, price_unit: priceUnit, status: d.status,
         region: d.region, province: d.province,
         municipality: d.municipality, barangay: d.barangay,
         lat: d.lat, lng: d.lng, notes: d.notes || null, volume: volumeStr,
