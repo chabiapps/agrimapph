@@ -219,7 +219,7 @@ const Index = () => {
         )}
       </main>
 
-      <UserBadge />
+      {tab === "report" && <UserBadge />}
       <BottomNav tab={tab} onChange={setTab} />
     </div>
   );
