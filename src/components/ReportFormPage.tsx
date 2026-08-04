@@ -13,6 +13,8 @@ import { toast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/i18n";
 import { CATEGORIES, CategoryKey, getCommodityIcon, getPriceMeta, PRICE_UNITS, PriceUnit } from "@/lib/categories";
 import LocationDropdowns, { LocationValue } from "@/components/LocationDropdowns";
+import MapPreview from "@/components/MapPreview";
+import { geocodeMunicipality, getProvinceCenter } from "@/lib/geoCoords";
 
 interface Props {
   onSubmitted?: (recordType?: "current_supply" | "planting_intention") => void;
