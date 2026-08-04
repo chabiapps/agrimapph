@@ -140,6 +140,41 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
 
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  // Coordinate resolution: dropdown lookup, overridden only by GPS / manual pin drag
+  const [coordSource, setCoordSource] = useState<"none" | "province" | "municipality" | "gps" | "manual">("none");
+  const [geoLoading, setGeoLoading] = useState(false);
+  const gpsLocked = useRef(false);
+
+  const setCoords = (lat: number, lng: number, source: typeof coordSource) => {
+    setForm((f) => ({ ...f, lat: lat.toFixed(6), lng: lng.toFixed(6) }));
+    setCoordSource(source);
+  };
+
+  useEffect(() => {
+    if (gpsLocked.current) return;
+    const { province, municipality } = location;
+    if (!province) return;
+
+    const center = getProvinceCenter(province);
+    if (!municipality) {
+      if (center) setCoords(center[0], center[1], "province");
+      return;
+    }
+
+    let cancelled = false;
+    setGeoLoading(true);
+    geocodeMunicipality(municipality, province)
+      .then((coords) => {
+        if (cancelled || gpsLocked.current) return;
+        if (coords) setCoords(coords[0], coords[1], "municipality");
+        else if (center) setCoords(center[0], center[1], "province");
+      })
+      .finally(() => { if (!cancelled) setGeoLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [location.province, location.municipality]);
+
+
   const isPlanting = recordType === "planting_intention";
   const subOptions = useMemo(
     () => CATEGORIES.find((c) => c.key === category)?.subcategories ?? [],
