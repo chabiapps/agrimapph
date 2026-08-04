@@ -322,12 +322,20 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   };
 
   const useMyLocation = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      toast({ title: "Hindi suportado ang GPS sa device na ito", variant: "destructive" });
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
-      (pos) => { update("lat", String(pos.coords.latitude)); update("lng", String(pos.coords.longitude)); },
+      (pos) => {
+        gpsLocked.current = true;
+        setCoords(pos.coords.latitude, pos.coords.longitude, "gps");
+        toast({ title: "Nakuha ang iyong lokasyon" });
+      },
       () => toast({ title: "Hindi makuha ang lokasyon", variant: "destructive" })
     );
   };
+
 
   const stageOptions = STAGE_BY_CATEGORY[category] ?? STAGE_BY_CATEGORY.other;
   const dateLabels = DATE_LABELS[category] ?? DATE_LABELS.other;
