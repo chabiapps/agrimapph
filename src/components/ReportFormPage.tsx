@@ -607,16 +607,39 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="lat" className="text-base">Latitude *</Label>
-                <Input id="lat" type="number" step="any" value={form.lat} onChange={(e) => update("lat", e.target.value)} className="min-h-[52px] text-base" required />
+                <Input id="lat" type="number" step="any" value={form.lat} onChange={(e) => { gpsLocked.current = true; update("lat", e.target.value); setCoordSource("manual"); }} className="min-h-[52px] text-base" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lng" className="text-base">Longitude *</Label>
-                <Input id="lng" type="number" step="any" value={form.lng} onChange={(e) => update("lng", e.target.value)} className="min-h-[52px] text-base" required />
+                <Input id="lng" type="number" step="any" value={form.lng} onChange={(e) => { gpsLocked.current = true; update("lng", e.target.value); setCoordSource("manual"); }} className="min-h-[52px] text-base" required />
               </div>
             </div>
             <Button type="button" variant="outline" onClick={useMyLocation} className="w-full min-h-[52px] text-base">
               📍 Gamitin ang aking lokasyon
             </Button>
+
+            {coordSource !== "none" && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">
+                  {geoLoading
+                    ? "Hinahanap ang koordinado…"
+                    : coordSource === "gps"
+                      ? "📍 Mula sa GPS ng iyong device"
+                      : coordSource === "municipality"
+                        ? `📌 Mula sa ${location.municipality}`
+                        : coordSource === "province"
+                          ? `📌 Gitna ng ${location.province} (walang eksaktong tugma sa bayan)`
+                          : "✍️ Manwal na inilagay"}
+                </p>
+                <MapPreview
+                  lat={Number(form.lat) || 12.8797}
+                  lng={Number(form.lng) || 121.774}
+                  emoji={getCommodityIcon(form.commodity, category)}
+                  onChange={(la, ln) => { gpsLocked.current = true; setCoords(la, ln, "manual"); }}
+                />
+              </div>
+            )}
+
           </div>
 
           {/* Reporter info (planting only) */}
