@@ -257,6 +257,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       status: "balanced",
       planted_date: d.planted_date,
       expected_harvest_date: d.expected_harvest_date,
+      volume: d.volume_level,
       expected_volume: volumeCombined,
       growth_stage: form.growth_stage || null,
       region: d.region, province: d.province,
