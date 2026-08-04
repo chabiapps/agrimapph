@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -13,6 +13,8 @@ import { toast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/i18n";
 import { CATEGORIES, CategoryKey, getCommodityIcon, getPriceMeta, PRICE_UNITS, PriceUnit } from "@/lib/categories";
 import LocationDropdowns, { LocationValue } from "@/components/LocationDropdowns";
+import MapPreview from "@/components/MapPreview";
+import { geocodeMunicipality, getProvinceCenter } from "@/lib/geoCoords";
 
 interface Props {
   onSubmitted?: (recordType?: "current_supply" | "planting_intention") => void;
@@ -137,6 +139,41 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   });
 
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Coordinate resolution: dropdown lookup, overridden only by GPS / manual pin drag
+  const [coordSource, setCoordSource] = useState<"none" | "province" | "municipality" | "gps" | "manual">("none");
+  const [geoLoading, setGeoLoading] = useState(false);
+  const gpsLocked = useRef(false);
+
+  const setCoords = (lat: number, lng: number, source: typeof coordSource) => {
+    setForm((f) => ({ ...f, lat: lat.toFixed(6), lng: lng.toFixed(6) }));
+    setCoordSource(source);
+  };
+
+  useEffect(() => {
+    if (gpsLocked.current) return;
+    const { province, municipality } = location;
+    if (!province) return;
+
+    const center = getProvinceCenter(province);
+    if (!municipality) {
+      if (center) setCoords(center[0], center[1], "province");
+      return;
+    }
+
+    let cancelled = false;
+    setGeoLoading(true);
+    geocodeMunicipality(municipality, province)
+      .then((coords) => {
+        if (cancelled || gpsLocked.current) return;
+        if (coords) setCoords(coords[0], coords[1], "municipality");
+        else if (center) setCoords(center[0], center[1], "province");
+      })
+      .finally(() => { if (!cancelled) setGeoLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [location.province, location.municipality]);
+
 
   const isPlanting = recordType === "planting_intention";
   const subOptions = useMemo(
@@ -285,12 +322,20 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   };
 
   const useMyLocation = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      toast({ title: "Hindi suportado ang GPS sa device na ito", variant: "destructive" });
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
-      (pos) => { update("lat", String(pos.coords.latitude)); update("lng", String(pos.coords.longitude)); },
+      (pos) => {
+        gpsLocked.current = true;
+        setCoords(pos.coords.latitude, pos.coords.longitude, "gps");
+        toast({ title: "Nakuha ang iyong lokasyon" });
+      },
       () => toast({ title: "Hindi makuha ang lokasyon", variant: "destructive" })
     );
   };
+
 
   const stageOptions = STAGE_BY_CATEGORY[category] ?? STAGE_BY_CATEGORY.other;
   const dateLabels = DATE_LABELS[category] ?? DATE_LABELS.other;
@@ -562,16 +607,39 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="lat" className="text-base">Latitude *</Label>
-                <Input id="lat" type="number" step="any" value={form.lat} onChange={(e) => update("lat", e.target.value)} className="min-h-[52px] text-base" required />
+                <Input id="lat" type="number" step="any" value={form.lat} onChange={(e) => { gpsLocked.current = true; update("lat", e.target.value); setCoordSource("manual"); }} className="min-h-[52px] text-base" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lng" className="text-base">Longitude *</Label>
-                <Input id="lng" type="number" step="any" value={form.lng} onChange={(e) => update("lng", e.target.value)} className="min-h-[52px] text-base" required />
+                <Input id="lng" type="number" step="any" value={form.lng} onChange={(e) => { gpsLocked.current = true; update("lng", e.target.value); setCoordSource("manual"); }} className="min-h-[52px] text-base" required />
               </div>
             </div>
             <Button type="button" variant="outline" onClick={useMyLocation} className="w-full min-h-[52px] text-base">
               📍 Gamitin ang aking lokasyon
             </Button>
+
+            {coordSource !== "none" && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">
+                  {geoLoading
+                    ? "Hinahanap ang koordinado…"
+                    : coordSource === "gps"
+                      ? "📍 Mula sa GPS ng iyong device"
+                      : coordSource === "municipality"
+                        ? `📌 Mula sa ${location.municipality}`
+                        : coordSource === "province"
+                          ? `📌 Gitna ng ${location.province} (walang eksaktong tugma sa bayan)`
+                          : "✍️ Manwal na inilagay"}
+                </p>
+                <MapPreview
+                  lat={Number(form.lat) || 12.8797}
+                  lng={Number(form.lng) || 121.774}
+                  emoji={getCommodityIcon(form.commodity, category)}
+                  onChange={(la, ln) => { gpsLocked.current = true; setCoords(la, ln, "manual"); }}
+                />
+              </div>
+            )}
+
           </div>
 
           {/* Reporter info (planting only) */}
