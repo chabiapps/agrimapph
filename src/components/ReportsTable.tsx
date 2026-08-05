@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/table";
 import { useLang, TKey } from "@/lib/i18n";
 import { getCommodityIcon } from "@/lib/categories";
+import { ContactIcons } from "@/components/ContactButtons";
 
 interface AgriReport {
   id: string;
@@ -23,6 +24,8 @@ interface AgriReport {
   record_type?: string | null;
   subcategory?: string | null;
   category?: string | null;
+  phone_number?: string | null;
+  messenger_username?: string | null;
 }
 
 const statusStyles: Record<string, string> = {
@@ -106,6 +109,7 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => {
           <SortableHead label={t("municipality")} sortKey="municipality" />
           <SortableHead label={t("barangay")} sortKey="barangay" />
           <SortableHead label={t("season")} sortKey="season" />
+          <TableHead className="font-semibold text-muted-foreground">Contact</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -143,6 +147,7 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => {
             <TableCell>{r.municipality ?? "—"}</TableCell>
             <TableCell>{r.barangay ?? "—"}</TableCell>
             <TableCell>{r.season ?? "—"}</TableCell>
+            <TableCell><ContactIcons report={r} /></TableCell>
           </TableRow>
         );})}
       </TableBody>
