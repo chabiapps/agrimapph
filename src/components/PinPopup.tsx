@@ -122,6 +122,8 @@ const PinPopup = ({ report, onClose }: Props) => {
                 <div className="text-muted-foreground">{report.municipality ?? ""}</div>
               </div>
             </div>
+
+            <ContactButtons report={report} />
           </div>
         )}
 
@@ -170,6 +172,8 @@ const PinPopup = ({ report, onClose }: Props) => {
                 <div className="text-muted-foreground">{report.municipality ?? ""}</div>
               </div>
             </div>
+
+            <ContactButtons report={report} />
           </div>
         )}
       </SheetContent>
