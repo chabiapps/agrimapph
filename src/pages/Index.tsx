@@ -33,6 +33,8 @@ interface AgriReport {
   growth_stage: string | null;
   category: string | null;
   subcategory: string | null;
+  phone_number?: string | null;
+  messenger_username?: string | null;
 }
 
 type MapMode = "current_supply" | "planting_intention";
@@ -50,9 +52,19 @@ const Index = () => {
   const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
 
   const fetchReports = useCallback(async () => {
-    const { data, error, status, statusText } = await supabase
+    const BASE_COLS =
+      "id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory";
+
+    let { data, error, status, statusText } = await supabase
       .from("agri_reports")
-      .select("id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory");
+      .select(`${BASE_COLS}, phone_number, messenger_username`);
+
+    if (error) {
+      // Contact columns may not exist yet — fall back to the base column set.
+      ({ data, error, status, statusText } = await supabase
+        .from("agri_reports")
+        .select(BASE_COLS));
+    }
 
     console.log("[agri_reports] URL host:", "gnrhciktvgokhipvsvcq.supabase.co");
     console.log("[agri_reports] http status:", status, statusText);
