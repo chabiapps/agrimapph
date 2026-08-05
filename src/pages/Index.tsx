@@ -68,7 +68,7 @@ const Index = () => {
       // Contact columns may not exist yet — fall back to the base column set.
       ({ data, error, status, statusText } = (await supabase
         .from("agri_reports")
-        .select(BASE_COLS)) as typeof arguments & never as {
+        .select(BASE_COLS)) as unknown as {
         data: Record<string, unknown>[] | null;
         error: { message: string } | null;
         status: number;
