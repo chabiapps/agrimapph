@@ -109,6 +109,7 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => {
           <SortableHead label={t("municipality")} sortKey="municipality" />
           <SortableHead label={t("barangay")} sortKey="barangay" />
           <SortableHead label={t("season")} sortKey="season" />
+          <TableHead className="font-semibold text-muted-foreground">Contact</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -146,6 +147,7 @@ const ReportsTable = ({ reports }: { reports: AgriReport[] }) => {
             <TableCell>{r.municipality ?? "—"}</TableCell>
             <TableCell>{r.barangay ?? "—"}</TableCell>
             <TableCell>{r.season ?? "—"}</TableCell>
+            <TableCell><ContactIcons report={r} /></TableCell>
           </TableRow>
         );})}
       </TableBody>
