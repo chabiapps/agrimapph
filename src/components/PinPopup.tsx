@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Package, Calendar, Clock } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { getCommodityIcon } from "@/lib/categories";
+import { ContactButtons } from "@/components/ContactButtons";
 
 interface AgriReport {
   id: string;
@@ -22,6 +23,8 @@ interface AgriReport {
   growth_stage?: string | null;
   subcategory?: string | null;
   category?: string | null;
+  phone_number?: string | null;
+  messenger_username?: string | null;
 }
 
 interface Props {

@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/table";
 import { useLang, TKey } from "@/lib/i18n";
 import { getCommodityIcon } from "@/lib/categories";
+import { ContactIcons } from "@/components/ContactButtons";
 
 interface AgriReport {
   id: string;
@@ -23,6 +24,8 @@ interface AgriReport {
   record_type?: string | null;
   subcategory?: string | null;
   category?: string | null;
+  phone_number?: string | null;
+  messenger_username?: string | null;
 }
 
 const statusStyles: Record<string, string> = {
