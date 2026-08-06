@@ -17,13 +17,13 @@ export const ContactButtons = ({ report }: { report: ContactInfo }) => {
   if (!phone && !messenger) return null;
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
+    <div className="flex w-full flex-col gap-2">
+      <div className="flex w-full gap-2">
         {phone && (
           <a
             href={`tel:${phone}`}
             aria-label="Tumawag sa reporter"
-            className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 text-base font-bold text-primary-foreground transition-colors hover:bg-green-700"
+            className="inline-flex h-12 min-h-[48px] flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 text-base font-bold text-white transition-colors hover:bg-green-700"
           >
             <span aria-hidden>📞</span> Tumawag
           </a>
@@ -34,14 +34,14 @@ export const ContactButtons = ({ report }: { report: ContactInfo }) => {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Mag-message sa Messenger"
-            className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-base font-bold text-primary-foreground transition-colors hover:bg-blue-700"
+            className="inline-flex h-12 min-h-[48px] flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-base font-bold text-white transition-colors hover:bg-blue-700"
           >
             <span aria-hidden>💬</span> Messenger
           </a>
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        Ang contact info ay ibinigay ng reporter at pampubliko.
+        Contact info voluntarily shared by reporter.
       </p>
     </div>
   );
