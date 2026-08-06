@@ -123,7 +123,9 @@ const PinPopup = ({ report, onClose }: Props) => {
               </div>
             </div>
 
-            <ContactButtons report={report} />
+            <div className="sticky bottom-0 -mx-6 -mb-6 border-t border-border bg-background px-6 py-3">
+              <ContactButtons report={report} />
+            </div>
           </div>
         )}
 
@@ -173,7 +175,9 @@ const PinPopup = ({ report, onClose }: Props) => {
               </div>
             </div>
 
-            <ContactButtons report={report} />
+            <div className="sticky bottom-0 -mx-6 -mb-6 border-t border-border bg-background px-6 py-3">
+              <ContactButtons report={report} />
+            </div>
           </div>
         )}
       </SheetContent>
