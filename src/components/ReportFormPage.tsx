@@ -272,6 +272,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         municipality: d.municipality, barangay: d.barangay,
         lat: d.lat, lng: d.lng, notes: d.notes || null, volume: volumeStr,
         planted_date: isFish ? form.date_caught : null,
+        phone_number: form.phone_number.trim() || null,
+        messenger_username: sanitizeMessenger(form.messenger_username) || null,
         reported_by: user.id,
       };
       const { error } = await supabase.from("agri_reports").insert(insertPayload as never).select();
@@ -314,6 +316,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       municipality: d.municipality, barangay: d.barangay,
       lat: d.lat, lng: d.lng,
       notes: notesCombined,
+      phone_number: form.phone_number.trim() || null,
+      messenger_username: sanitizeMessenger(form.messenger_username) || null,
       reported_by: user.id,
     };
     const { error } = await supabase.from("agri_reports").insert(plantingPayload as never).select();
