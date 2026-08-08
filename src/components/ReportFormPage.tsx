@@ -669,6 +669,39 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
             </div>
           )}
 
+          {/* Contact info (optional) */}
+          <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="phone_number" className="text-base">Numero ng Telepono (opsyonal)</Label>
+              <Input
+                id="phone_number"
+                type="tel"
+                inputMode="tel"
+                placeholder="hal. 09171234567"
+                value={form.phone_number}
+                onChange={(e) => update("phone_number", e.target.value.replace(/[^0-9+]/g, "").slice(0, 20))}
+                className="min-h-[52px] text-base"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="messenger_username" className="text-base">Messenger Username (opsyonal)</Label>
+              <Input
+                id="messenger_username"
+                placeholder="hal. juandelacruz"
+                value={form.messenger_username}
+                onChange={(e) => update("messenger_username", sanitizeMessenger(e.target.value).slice(0, 50))}
+                className="min-h-[52px] text-base"
+              />
+              {form.messenger_username && (
+                <p className="text-sm text-muted-foreground">
+                  Ang iyong Messenger link: <span className="font-medium text-foreground">m.me/{form.messenger_username}</span>
+                </p>
+              )}
+            </div>
+          </div>
+
+
+
           {/* Notes */}
           <div className="space-y-2">
             <Label htmlFor="notes" className="text-base">Mga Tala</Label>
