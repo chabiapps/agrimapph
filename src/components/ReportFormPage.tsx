@@ -136,9 +136,22 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     weight: "",
     reporter_name: "",
     reporter_contact: "",
+    phone_number: "",
+    messenger_username: "",
   });
 
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  /** Strip URLs, @, spaces and any invalid characters from a Messenger handle. */
+  const sanitizeMessenger = (raw: string) => {
+    let v = (raw ?? "").trim();
+    v = v.replace(/^https?:\/\//i, "").replace(/^www\./i, "");
+    v = v.replace(/^(m\.me|facebook\.com|fb\.com|messenger\.com)\//i, "");
+    v = v.split(/[?#]/)[0];
+    v = v.split("/").filter(Boolean)[0] ?? "";
+    v = v.replace(/@/g, "").replace(/\s+/g, "");
+    return v.replace(/[^A-Za-z0-9._-]/g, "");
+  };
 
   // Coordinate resolution: dropdown lookup, overridden only by GPS / manual pin drag
   const [coordSource, setCoordSource] = useState<"none" | "province" | "municipality" | "gps" | "manual">("none");
