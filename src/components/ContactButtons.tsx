@@ -14,7 +14,7 @@ export const hasContact = (r: ContactInfo) => !!(clean(r.phone_number) || clean(
 export const ContactButtons = ({ report }: { report: ContactInfo }) => {
   const phone = clean(report.phone_number);
   const messenger = clean(report.messenger_username);
-  if (!phone && !messenger) return null;
+  if (!phone && !messenger) return <p className="text-sm text-muted-foreground">—</p>;
 
   return (
     <div className="flex w-full flex-col gap-2">

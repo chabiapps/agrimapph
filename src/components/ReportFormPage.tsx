@@ -136,9 +136,22 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     weight: "",
     reporter_name: "",
     reporter_contact: "",
+    phone_number: "",
+    messenger_username: "",
   });
 
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  /** Strip URLs, @, spaces and any invalid characters from a Messenger handle. */
+  const sanitizeMessenger = (raw: string) => {
+    let v = (raw ?? "").trim();
+    v = v.replace(/^https?:\/\//i, "").replace(/^www\./i, "");
+    v = v.replace(/^(m\.me|facebook\.com|fb\.com|messenger\.com)\//i, "");
+    v = v.split(/[?#]/)[0];
+    v = v.split("/").filter(Boolean)[0] ?? "";
+    v = v.replace(/@/g, "").replace(/\s+/g, "");
+    return v.replace(/[^A-Za-z0-9._-]/g, "");
+  };
 
   // Coordinate resolution: dropdown lookup, overridden only by GPS / manual pin drag
   const [coordSource, setCoordSource] = useState<"none" | "province" | "municipality" | "gps" | "manual">("none");
@@ -259,6 +272,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
         municipality: d.municipality, barangay: d.barangay,
         lat: d.lat, lng: d.lng, notes: d.notes || null, volume: volumeStr,
         planted_date: isFish ? form.date_caught : null,
+        phone_number: form.phone_number.trim() || null,
+        messenger_username: sanitizeMessenger(form.messenger_username) || null,
         reported_by: user.id,
       };
       const { error } = await supabase.from("agri_reports").insert(insertPayload as never).select();
@@ -301,6 +316,8 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       municipality: d.municipality, barangay: d.barangay,
       lat: d.lat, lng: d.lng,
       notes: notesCombined,
+      phone_number: form.phone_number.trim() || null,
+      messenger_username: sanitizeMessenger(form.messenger_username) || null,
       reported_by: user.id,
     };
     const { error } = await supabase.from("agri_reports").insert(plantingPayload as never).select();
@@ -655,6 +672,39 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
               </div>
             </div>
           )}
+
+          {/* Contact info (optional) */}
+          <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="phone_number" className="text-base">Numero ng Telepono (opsyonal)</Label>
+              <Input
+                id="phone_number"
+                type="tel"
+                inputMode="tel"
+                placeholder="hal. 09171234567"
+                value={form.phone_number}
+                onChange={(e) => update("phone_number", e.target.value.replace(/[^0-9+]/g, "").slice(0, 20))}
+                className="min-h-[52px] text-base"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="messenger_username" className="text-base">Messenger Username (opsyonal)</Label>
+              <Input
+                id="messenger_username"
+                placeholder="hal. juandelacruz"
+                value={form.messenger_username}
+                onChange={(e) => update("messenger_username", sanitizeMessenger(e.target.value).slice(0, 50))}
+                className="min-h-[52px] text-base"
+              />
+              {form.messenger_username && (
+                <p className="text-sm text-muted-foreground">
+                  Ang iyong Messenger link: <span className="font-medium text-foreground">m.me/{form.messenger_username}</span>
+                </p>
+              )}
+            </div>
+          </div>
+
+
 
           {/* Notes */}
           <div className="space-y-2">
