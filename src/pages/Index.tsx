@@ -209,7 +209,7 @@ const Index = () => {
                 🌱 Paparating
               </button>
             </div>
-            <AgriMap reports={filtered} onPinClick={handlePinClick} mode={mapMode} />
+            <AgriMap reports={filtered} onPinClick={handlePinClick} mode={mapMode} verifiedTiers={verifiedTiers} />
             <MapFilterSheet
               open={filterOpen}
               onOpenChange={(o) => { setFilterOpen(o); if (o) setSelected(null); }}
@@ -272,28 +272,11 @@ const Index = () => {
         )}
       </main>
 
-      {tab === "report" && <UserBadge />}
+      <ProfileButton />
       <BottomNav tab={tab} onChange={setTab} />
     </div>
   );
 };
 
-const UserBadge = () => {
-  const { user, signOut } = useAuth();
-  if (!user) return null;
-  const initial = (user.email ?? "?").charAt(0).toUpperCase();
-  return (
-    <button
-      onClick={signOut}
-      title="Mag-logout"
-      className="fixed top-3 right-16 z-[1002] flex items-center gap-2 bg-card/95 backdrop-blur border border-border rounded-full pl-1 pr-3 py-1 shadow-lg hover:bg-muted transition-colors"
-    >
-      <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground grid place-items-center font-bold text-sm">
-        {initial}
-      </span>
-      <LogOut className="w-4 h-4 text-foreground/70" />
-    </button>
-  );
-};
 
 export default Index;
