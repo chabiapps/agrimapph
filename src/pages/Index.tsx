@@ -39,12 +39,17 @@ interface AgriReport {
   subcategory: string | null;
   phone_number?: string | null;
   messenger_username?: string | null;
+  reported_by?: string | null;
 }
 
 type MapMode = "current_supply" | "planting_intention";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const [reports, setReports] = useState<AgriReport[]>([]);
+  const [verifiedTiers, setVerifiedTiers] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<AgriReport | null>(null);
   const [tab, setTab] = useState<Tab>("map");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -55,9 +60,15 @@ const Index = () => {
   const [mapMode, setMapMode] = useState<MapMode>("current_supply");
   const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
 
+  // Send freshly signed-up users through onboarding.
+  useEffect(() => {
+    if (authLoading || profileLoading) return;
+    if (user && !isProfileComplete(profile)) navigate("/onboarding");
+  }, [authLoading, profileLoading, user, profile, navigate]);
+
   const fetchReports = useCallback(async () => {
     const BASE_COLS =
-      "id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory";
+      "id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory, reported_by";
 
     let { data, error, status, statusText } = (await supabase
       .from("agri_reports")
