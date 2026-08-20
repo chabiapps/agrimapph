@@ -20,12 +20,15 @@ interface AgriReport {
   subcategory?: string | null;
   category?: string | null;
   expected_harvest_date?: string | null;
+  reported_by?: string | null;
 }
 
 interface AgriMapProps {
   reports: AgriReport[];
   onPinClick: (report: AgriReport) => void;
   mode?: "current_supply" | "planting_intention";
+  /** reported_by (user id) -> verification_tier */
+  verifiedTiers?: Record<string, string>;
 }
 
 const statusColor: Record<string, string> = {
@@ -34,7 +37,17 @@ const statusColor: Record<string, string> = {
   balanced: "#eab308",
 };
 
-const makePlantingIcon = (emoji: string, nearHarvest = false) =>
+const badgeHtml = (tier?: string) => {
+  if (tier !== "community" && tier !== "government") return "";
+  const glyph = tier === "government" ? "✅" : "⭐";
+  return `<div title="${tier === "government" ? "Government verified" : "Community verified"}" style="
+    position:absolute;top:-6px;right:-8px;width:18px;height:18px;border-radius:50%;
+    background:#fff;border:1.5px solid ${tier === "government" ? "#16a34a" : "#eab308"};
+    display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;
+    box-shadow:0 1px 3px rgba(0,0,0,0.3);">${glyph}</div>`;
+};
+
+const makePlantingIcon = (emoji: string, nearHarvest = false, tier?: string) =>
   L.divIcon({
     className: "",
     html: `<div style="position:relative;width:40px;height:40px;">
@@ -47,25 +60,28 @@ const makePlantingIcon = (emoji: string, nearHarvest = false) =>
         font-size:22px;line-height:1;
         box-shadow:0 2px 6px rgba(0,0,0,0.28);
       ">${emoji}</div>
+      ${badgeHtml(tier)}
     </div>`,
     iconSize: [40, 40],
     iconAnchor: [20, 20],
   });
 
-const makeSupplyIcon = (color: string, emoji: string) =>
+const makeSupplyIcon = (color: string, emoji: string, tier?: string) =>
   L.divIcon({
     className: "",
-    html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+    html: `<div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;">
       <div style="
         width:32px;height:32px;border-radius:50%;
         background:${color};border:3px solid #fff;
         box-shadow:0 2px 5px rgba(0,0,0,0.30);
       "></div>
       <div style="font-size:14px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.3));">${emoji}</div>
+      ${badgeHtml(tier)}
     </div>`,
     iconSize: [32, 50],
     iconAnchor: [16, 16],
   });
+
 
 const AgriMap = ({ reports, onPinClick, mode = "current_supply" }: AgriMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
