@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/db";
 import AgriMap from "@/components/AgriMap";
 import PinPopup from "@/components/PinPopup";
 import ReportsTable from "@/components/ReportsTable";
@@ -9,9 +11,11 @@ import ReportFormPage from "@/components/ReportFormPage";
 import BottomNav, { Tab } from "@/components/BottomNav";
 import MapFilterSheet from "@/components/MapFilterSheet";
 import AuthGate from "@/components/AuthGate";
+import ProfileButton from "@/components/ProfileButton";
 import { useAuth } from "@/lib/AuthContext";
-import { LogOut } from "lucide-react";
+import { isProfileComplete, useProfile } from "@/lib/profile";
 import { CategoryKey, inferCategory } from "@/lib/categories";
+
 
 interface AgriReport {
   id: string;
@@ -35,12 +39,17 @@ interface AgriReport {
   subcategory: string | null;
   phone_number?: string | null;
   messenger_username?: string | null;
+  reported_by?: string | null;
 }
 
 type MapMode = "current_supply" | "planting_intention";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const [reports, setReports] = useState<AgriReport[]>([]);
+  const [verifiedTiers, setVerifiedTiers] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<AgriReport | null>(null);
   const [tab, setTab] = useState<Tab>("map");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -51,9 +60,15 @@ const Index = () => {
   const [mapMode, setMapMode] = useState<MapMode>("current_supply");
   const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
 
+  // Send freshly signed-up users through onboarding.
+  useEffect(() => {
+    if (authLoading || profileLoading) return;
+    if (user && !isProfileComplete(profile)) navigate("/onboarding");
+  }, [authLoading, profileLoading, user, profile, navigate]);
+
   const fetchReports = useCallback(async () => {
     const BASE_COLS =
-      "id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory";
+      "id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory, reported_by";
 
     let { data, error, status, statusText } = (await supabase
       .from("agri_reports")
@@ -95,6 +110,22 @@ const Index = () => {
   useEffect(() => {
     fetchReports();
   }, [fetchReports]);
+
+  // Verification tiers for pin badges (community / government verified reporters).
+  useEffect(() => {
+    let active = true;
+    db.from("user_profiles")
+      .select("id, verification_tier")
+      .in("verification_tier", ["community", "government"])
+      .then(({ data }) => {
+        if (!active || !data) return;
+        const map: Record<string, string> = {};
+        (data as { id: string; verification_tier: string }[]).forEach((p) => { map[p.id] = p.verification_tier; });
+        setVerifiedTiers(map);
+      });
+    return () => { active = false; };
+  }, []);
+
 
   const commodities = useMemo(() => {
     const inCat = (r: AgriReport) => {
@@ -178,7 +209,7 @@ const Index = () => {
                 🌱 Paparating
               </button>
             </div>
-            <AgriMap reports={filtered} onPinClick={handlePinClick} mode={mapMode} />
+            <AgriMap reports={filtered} onPinClick={handlePinClick} mode={mapMode} verifiedTiers={verifiedTiers} />
             <MapFilterSheet
               open={filterOpen}
               onOpenChange={(o) => { setFilterOpen(o); if (o) setSelected(null); }}
@@ -241,28 +272,11 @@ const Index = () => {
         )}
       </main>
 
-      {tab === "report" && <UserBadge />}
+      <ProfileButton />
       <BottomNav tab={tab} onChange={setTab} />
     </div>
   );
 };
 
-const UserBadge = () => {
-  const { user, signOut } = useAuth();
-  if (!user) return null;
-  const initial = (user.email ?? "?").charAt(0).toUpperCase();
-  return (
-    <button
-      onClick={signOut}
-      title="Mag-logout"
-      className="fixed top-3 right-16 z-[1002] flex items-center gap-2 bg-card/95 backdrop-blur border border-border rounded-full pl-1 pr-3 py-1 shadow-lg hover:bg-muted transition-colors"
-    >
-      <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground grid place-items-center font-bold text-sm">
-        {initial}
-      </span>
-      <LogOut className="w-4 h-4 text-foreground/70" />
-    </button>
-  );
-};
 
 export default Index;
