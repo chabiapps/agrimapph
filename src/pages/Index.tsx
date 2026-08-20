@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/db";
 import AgriMap from "@/components/AgriMap";
 import PinPopup from "@/components/PinPopup";
 import ReportsTable from "@/components/ReportsTable";
@@ -9,9 +11,11 @@ import ReportFormPage from "@/components/ReportFormPage";
 import BottomNav, { Tab } from "@/components/BottomNav";
 import MapFilterSheet from "@/components/MapFilterSheet";
 import AuthGate from "@/components/AuthGate";
+import ProfileButton from "@/components/ProfileButton";
 import { useAuth } from "@/lib/AuthContext";
-import { LogOut } from "lucide-react";
+import { isProfileComplete, useProfile } from "@/lib/profile";
 import { CategoryKey, inferCategory } from "@/lib/categories";
+
 
 interface AgriReport {
   id: string;
