@@ -83,7 +83,7 @@ const makeSupplyIcon = (color: string, emoji: string, tier?: string) =>
   });
 
 
-const AgriMap = ({ reports, onPinClick, mode = "current_supply" }: AgriMapProps) => {
+const AgriMap = ({ reports, onPinClick, mode = "current_supply", verifiedTiers = {} }: AgriMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
 
@@ -114,6 +114,7 @@ const AgriMap = ({ reports, onPinClick, mode = "current_supply" }: AgriMapProps)
 
     reports.forEach((report) => {
       const emoji = getCommodityIcon(report.subcategory, report.category);
+      const tier = report.reported_by ? verifiedTiers[report.reported_by] : undefined;
 
       if (mode === "planting_intention") {
         let nearHarvest = false;
@@ -121,17 +122,17 @@ const AgriMap = ({ reports, onPinClick, mode = "current_supply" }: AgriMapProps)
           const diffDays = (new Date(report.expected_harvest_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
           if (!isNaN(diffDays) && diffDays >= 0 && diffDays <= 14) nearHarvest = true;
         }
-        L.marker([report.lat, report.lng], { icon: makePlantingIcon(emoji, nearHarvest) })
+        L.marker([report.lat, report.lng], { icon: makePlantingIcon(emoji, nearHarvest, tier) })
           .addTo(map)
           .on("click", () => onPinClick(report));
       } else {
         const color = statusColor[report.status] || "#9ca3af";
-        L.marker([report.lat, report.lng], { icon: makeSupplyIcon(color, emoji) })
+        L.marker([report.lat, report.lng], { icon: makeSupplyIcon(color, emoji, tier) })
           .addTo(map)
           .on("click", () => onPinClick(report));
       }
     });
-  }, [reports, onPinClick, mode]);
+  }, [reports, onPinClick, mode, verifiedTiers]);
 
   return <div ref={mapRef} className="h-full w-full" />;
 };
