@@ -111,6 +111,22 @@ const Index = () => {
     fetchReports();
   }, [fetchReports]);
 
+  // Verification tiers for pin badges (community / government verified reporters).
+  useEffect(() => {
+    let active = true;
+    db.from("user_profiles")
+      .select("id, verification_tier")
+      .in("verification_tier", ["community", "government"])
+      .then(({ data }) => {
+        if (!active || !data) return;
+        const map: Record<string, string> = {};
+        (data as { id: string; verification_tier: string }[]).forEach((p) => { map[p.id] = p.verification_tier; });
+        setVerifiedTiers(map);
+      });
+    return () => { active = false; };
+  }, []);
+
+
   const commodities = useMemo(() => {
     const inCat = (r: AgriReport) => {
       if (category === "all") return true;
