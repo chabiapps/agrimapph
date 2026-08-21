@@ -42,8 +42,8 @@ const Onboarding = ({ embedded = false, onDone }: { embedded?: boolean; onDone?:
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   useEffect(() => {
-    if (!loading && !user) navigate("/", { replace: true });
-  }, [loading, user, navigate]);
+    if (!embedded && !loading && !user) navigate("/", { replace: true });
+  }, [embedded, loading, user, navigate]);
 
   useEffect(() => {
     fetchCommodities().then(setCommodities);
