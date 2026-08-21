@@ -42,9 +42,6 @@ interface AgriReport {
 type MapMode = "current_supply" | "planting_intention";
 
 const Index = () => {
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useProfile();
   const [reports, setReports] = useState<AgriReport[]>([]);
   const [verifiedTiers, setVerifiedTiers] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<AgriReport | null>(null);
@@ -57,11 +54,7 @@ const Index = () => {
   const [mapMode, setMapMode] = useState<MapMode>("current_supply");
   const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
 
-  // Send freshly signed-up users through onboarding.
-  useEffect(() => {
-    if (authLoading || profileLoading) return;
-    if (user && !isProfileComplete(profile)) navigate("/onboarding");
-  }, [authLoading, profileLoading, user, profile, navigate]);
+
 
   const fetchReports = useCallback(async () => {
     const BASE_COLS =
