@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { db } from "@/lib/db";
 import AgriMap from "@/components/AgriMap";
@@ -7,13 +6,11 @@ import PinPopup from "@/components/PinPopup";
 import ReportsTable from "@/components/ReportsTable";
 import FilterBar from "@/components/FilterBar";
 import LanguageToggle from "@/components/LanguageToggle";
-import ReportFormPage from "@/components/ReportFormPage";
 import BottomNav, { Tab } from "@/components/BottomNav";
 import MapFilterSheet from "@/components/MapFilterSheet";
 import AuthGate from "@/components/AuthGate";
 import ProfileButton from "@/components/ProfileButton";
-import { useAuth } from "@/lib/AuthContext";
-import { isProfileComplete, useProfile } from "@/lib/profile";
+import ReportTabGate from "@/components/ReportTabGate";
 import { CategoryKey, inferCategory } from "@/lib/categories";
 
 
@@ -45,9 +42,6 @@ interface AgriReport {
 type MapMode = "current_supply" | "planting_intention";
 
 const Index = () => {
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useProfile();
   const [reports, setReports] = useState<AgriReport[]>([]);
   const [verifiedTiers, setVerifiedTiers] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<AgriReport | null>(null);
@@ -60,11 +54,7 @@ const Index = () => {
   const [mapMode, setMapMode] = useState<MapMode>("current_supply");
   const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
 
-  // Send freshly signed-up users through onboarding.
-  useEffect(() => {
-    if (authLoading || profileLoading) return;
-    if (user && !isProfileComplete(profile)) navigate("/onboarding");
-  }, [authLoading, profileLoading, user, profile, navigate]);
+
 
   const fetchReports = useCallback(async () => {
     const BASE_COLS =
@@ -263,7 +253,7 @@ const Index = () => {
 
         {tab === "report" && (
           <AuthGate>
-            <ReportFormPage onSubmitted={(rt) => {
+            <ReportTabGate onSubmitted={(rt) => {
               fetchReports();
               if (rt === "planting_intention") setMapMode("planting_intention");
               setTab("map");

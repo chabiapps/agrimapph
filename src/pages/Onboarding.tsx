@@ -20,7 +20,7 @@ const sanitizeMessenger = (raw: string) =>
     .replace(/[?#].*$/, "")
     .replace(/[^A-Za-z0-9._-]/g, "");
 
-const Onboarding = () => {
+const Onboarding = ({ embedded = false, onDone }: { embedded?: boolean; onDone?: () => void } = {}) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -42,8 +42,8 @@ const Onboarding = () => {
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   useEffect(() => {
-    if (!loading && !user) navigate("/", { replace: true });
-  }, [loading, user, navigate]);
+    if (!embedded && !loading && !user) navigate("/", { replace: true });
+  }, [embedded, loading, user, navigate]);
 
   useEffect(() => {
     fetchCommodities().then(setCommodities);
@@ -126,7 +126,7 @@ const Onboarding = () => {
   const meta = userTypeMeta(userType);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className={`${embedded ? "h-full" : "min-h-screen"} bg-background flex flex-col overflow-y-auto`}>
       <header className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3 flex items-center gap-3">
         {step > 1 && step < 4 && (
           <button onClick={() => setStep(step === 4 ? 3 : step - 1)} aria-label="Bumalik" className="p-2 -ml-2">
@@ -246,9 +246,10 @@ const Onboarding = () => {
 
       <footer className="sticky bottom-0 bg-card border-t border-border px-4 py-3 max-w-lg w-full mx-auto">
         {step === 4 ? (
-          <Button onClick={() => navigate("/")} className="w-full min-h-[56px] text-base font-bold bg-primary hover:bg-primary/90">
-            Pumunta sa Mapa
+          <Button onClick={() => (onDone ? onDone() : navigate("/"))} className="w-full min-h-[56px] text-base font-bold bg-primary hover:bg-primary/90">
+            {onDone ? "Magpatuloy sa Mag-ulat" : "Pumunta sa Mapa"}
           </Button>
+
         ) : (
           <Button onClick={next} disabled={saving} className="w-full min-h-[56px] text-base font-bold bg-primary hover:bg-primary/90">
             {saving ? "Sandali..." : step === 1 ? "Magpatuloy" : step === 2 && !isProducer(userType) ? "Tapusin" : step === 3 ? "Tapusin" : "Magpatuloy"}
