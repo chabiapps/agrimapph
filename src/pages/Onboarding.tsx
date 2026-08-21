@@ -20,7 +20,7 @@ const sanitizeMessenger = (raw: string) =>
     .replace(/[?#].*$/, "")
     .replace(/[^A-Za-z0-9._-]/g, "");
 
-const Onboarding = () => {
+const Onboarding = ({ embedded = false, onDone }: { embedded?: boolean; onDone?: () => void } = {}) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
