@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { db } from "@/lib/db";
 import AgriMap from "@/components/AgriMap";
@@ -7,13 +6,11 @@ import PinPopup from "@/components/PinPopup";
 import ReportsTable from "@/components/ReportsTable";
 import FilterBar from "@/components/FilterBar";
 import LanguageToggle from "@/components/LanguageToggle";
-import ReportFormPage from "@/components/ReportFormPage";
 import BottomNav, { Tab } from "@/components/BottomNav";
 import MapFilterSheet from "@/components/MapFilterSheet";
 import AuthGate from "@/components/AuthGate";
 import ProfileButton from "@/components/ProfileButton";
-import { useAuth } from "@/lib/AuthContext";
-import { isProfileComplete, useProfile } from "@/lib/profile";
+import ReportTabGate from "@/components/ReportTabGate";
 import { CategoryKey, inferCategory } from "@/lib/categories";
 
 
