@@ -253,7 +253,7 @@ const Index = () => {
 
         {tab === "report" && (
           <AuthGate>
-            <ReportFormPage onSubmitted={(rt) => {
+            <ReportTabGate onSubmitted={(rt) => {
               fetchReports();
               if (rt === "planting_intention") setMapMode("planting_intention");
               setTab("map");
