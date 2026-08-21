@@ -246,9 +246,10 @@ const Onboarding = ({ embedded = false, onDone }: { embedded?: boolean; onDone?:
 
       <footer className="sticky bottom-0 bg-card border-t border-border px-4 py-3 max-w-lg w-full mx-auto">
         {step === 4 ? (
-          <Button onClick={() => navigate("/")} className="w-full min-h-[56px] text-base font-bold bg-primary hover:bg-primary/90">
-            Pumunta sa Mapa
+          <Button onClick={() => (onDone ? onDone() : navigate("/"))} className="w-full min-h-[56px] text-base font-bold bg-primary hover:bg-primary/90">
+            {onDone ? "Magpatuloy sa Mag-ulat" : "Pumunta sa Mapa"}
           </Button>
+
         ) : (
           <Button onClick={next} disabled={saving} className="w-full min-h-[56px] text-base font-bold bg-primary hover:bg-primary/90">
             {saving ? "Sandali..." : step === 1 ? "Magpatuloy" : step === 2 && !isProducer(userType) ? "Tapusin" : step === 3 ? "Tapusin" : "Magpatuloy"}
