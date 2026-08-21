@@ -126,7 +126,7 @@ const Onboarding = ({ embedded = false, onDone }: { embedded?: boolean; onDone?:
   const meta = userTypeMeta(userType);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className={`${embedded ? "h-full" : "min-h-screen"} bg-background flex flex-col overflow-y-auto`}>
       <header className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3 flex items-center gap-3">
         {step > 1 && step < 4 && (
           <button onClick={() => setStep(step === 4 ? 3 : step - 1)} aria-label="Bumalik" className="p-2 -ml-2">
