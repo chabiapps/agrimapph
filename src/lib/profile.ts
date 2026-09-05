@@ -43,6 +43,10 @@ export interface UserProfile {
   messenger_username: string | null;
   primary_commodity: string | null;
   farm_location: string | null;
+  farm_region: string | null;
+  farm_province: string | null;
+  farm_municipality: string | null;
+  farm_barangay: string | null;
   land_area: string | null;
   vessel_type: string | null;
   rsbsa_number: string | null;
