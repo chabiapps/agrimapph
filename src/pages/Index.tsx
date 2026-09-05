@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { db } from "@/lib/db";
+import { useAuth } from "@/lib/AuthContext";
 import AgriMap from "@/components/AgriMap";
 import PinPopup from "@/components/PinPopup";
 import ReportsTable from "@/components/ReportsTable";
