@@ -43,6 +43,10 @@ export interface UserProfile {
   messenger_username: string | null;
   primary_commodity: string | null;
   farm_location: string | null;
+  farm_region: string | null;
+  farm_province: string | null;
+  farm_municipality: string | null;
+  farm_barangay: string | null;
   land_area: string | null;
   vessel_type: string | null;
   rsbsa_number: string | null;
@@ -52,7 +56,7 @@ export interface UserProfile {
 }
 
 export const PROFILE_COLS =
-  "id, full_name, user_type, phone_number, messenger_username, primary_commodity, farm_location, land_area, vessel_type, rsbsa_number, philsys_id, verification_tier, created_at";
+  "id, full_name, user_type, phone_number, messenger_username, primary_commodity, farm_location, farm_region, farm_province, farm_municipality, farm_barangay, land_area, vessel_type, rsbsa_number, philsys_id, verification_tier, created_at";
 
 export const isProfileComplete = (p: UserProfile | null) =>
   !!p && !!p.full_name && !!p.user_type;
