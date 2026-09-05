@@ -16,8 +16,8 @@ const ReportTabGate = ({ onSubmitted }: { onSubmitted: (recordType: string) => v
 
   const check = useCallback(async () => {
     if (!user) return;
-    const { data } = await db.from("user_profiles").select("id").eq("id", user.id).maybeSingle();
-    setHasProfile(!!data);
+    const { data } = await db.from("user_profiles").select("id, user_type").eq("id", user.id).maybeSingle();
+    setHasProfile(!!(data as { user_type?: string | null } | null)?.user_type);
   }, [user]);
 
   useEffect(() => {

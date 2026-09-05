@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/db";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,23 +20,31 @@ const AuthModal = ({ open, onOpenChange, initialMode = "login" }: Props) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const navigate = useNavigate();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email, password,
           options: { emailRedirectTo: `${window.location.origin}/` },
         });
         if (error) throw error;
-        toast({ title: "Salamat!", description: "Naka-sign up ka na. Puwede ka nang mag-ulat." });
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast({ title: "Naka-login ka na!" });
+        toast({ title: "Salamat!", description: "Naka-sign up ka na. Kumpletuhin ang iyong profile." });
+        onOpenChange(false);
+        setEmail(""); setPassword("");
+        if (data.session?.user) {
+          // Placeholder row so the app knows onboarding is still pending (user_type null).
+          await db.from("user_profiles").upsert({ id: data.session.user.id }, { onConflict: "id" });
+          navigate("/onboarding", { replace: true });
+        }
+        return;
       }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast({ title: "Naka-login ka na!" });
       onOpenChange(false);
       setEmail(""); setPassword("");
     } catch (err: unknown) {
@@ -44,6 +54,7 @@ const AuthModal = ({ open, onOpenChange, initialMode = "login" }: Props) => {
       setBusy(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

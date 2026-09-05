@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { db } from "@/lib/db";
+import { useAuth } from "@/lib/AuthContext";
 import AgriMap from "@/components/AgriMap";
 import PinPopup from "@/components/PinPopup";
 import ReportsTable from "@/components/ReportsTable";
@@ -53,6 +55,25 @@ const Index = () => {
   const [status, setStatus] = useState("all");
   const [mapMode, setMapMode] = useState<MapMode>("current_supply");
   const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
+
+  // Signup leaves a placeholder profile row with no user_type — such users must
+  // finish onboarding before using the app. Returning users pass straight through.
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let active = true;
+    db.from("user_profiles")
+      .select("id, user_type")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        const row = data as { user_type?: string | null } | null;
+        if (active && row && !row.user_type) navigate("/onboarding", { replace: true });
+      });
+    return () => { active = false; };
+  }, [authLoading, user, navigate]);
+
 
 
 
