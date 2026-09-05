@@ -57,6 +57,13 @@ const Onboarding = ({ embedded = false, onDone }: { embedded?: boolean; onDone?:
       const p = data as UserProfile | null;
       if (!p) return;
       setUserType((p.user_type as UserType) ?? "");
+      setLoc((l) => ({
+        ...l,
+        region: p.farm_region ?? "",
+        province: p.farm_province ?? "",
+        municipality: p.farm_municipality ?? "",
+        barangay: p.farm_barangay ?? "",
+      }));
       setForm((f) => ({
         ...f,
         full_name: p.full_name ?? "",
@@ -90,7 +97,10 @@ const Onboarding = ({ embedded = false, onDone }: { embedded?: boolean; onDone?:
       phone_number: form.phone_number.trim() || null,
       messenger_username: sanitizeMessenger(form.messenger_username) || null,
       primary_commodity: producer ? form.primary_commodity || null : null,
-      farm_location: producer ? form.farm_location.trim() || null : null,
+      farm_region: producer ? loc.region || null : null,
+      farm_province: producer ? loc.province || null : null,
+      farm_municipality: producer ? loc.municipality || null : null,
+      farm_barangay: producer ? loc.barangay || null : null,
       land_area: producer && userType !== "fisherfolk" ? form.land_area.trim() || null : null,
       vessel_type: userType === "fisherfolk" ? form.vessel_type.trim() || null : null,
       rsbsa_number: producer ? form.rsbsa_number.trim() || null : null,
@@ -201,9 +211,8 @@ const Onboarding = ({ embedded = false, onDone }: { embedded?: boolean; onDone?:
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ob-loc">Lokasyon ng sakahan / pangisdaan</Label>
-              <Textarea id="ob-loc" rows={2} placeholder="Brgy. Poblacion, Bambang, Nueva Vizcaya"
-                value={form.farm_location} onChange={(e) => set("farm_location", e.target.value)} className="text-base" />
+              <Label className="text-base">Lokasyon ng sakahan / pangisdaan</Label>
+              <LocationDropdowns value={loc} onChange={setLoc} />
             </div>
             {userType === "fisherfolk" ? (
               <div className="space-y-2">
