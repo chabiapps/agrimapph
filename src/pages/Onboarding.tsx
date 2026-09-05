@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import LocationDropdowns, { LocationValue } from "@/components/LocationDropdowns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 
@@ -28,6 +28,8 @@ const Onboarding = ({ embedded = false, onDone }: { embedded?: boolean; onDone?:
   const [commodities, setCommodities] = useState<Commodity[]>([]);
 
   const [userType, setUserType] = useState<UserType | "">("");
+  const emptyLoc: LocationValue = { region: "", province: "", municipality: "", barangay: "", provinceCode: "", municipalityCode: "" };
+  const [loc, setLoc] = useState<LocationValue>(emptyLoc);
   const [form, setForm] = useState({
     full_name: "",
     phone_number: "",
