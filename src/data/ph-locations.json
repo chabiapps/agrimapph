@@ -6,7 +6,7 @@
    "provinces": [
     {
      "name": "Metro Manila (NCR)",
-     "code": "133900000",
+     "code": "130000000",
      "municipalities": [
       "City of Caloocan",
       "City of Las Piñas",
@@ -35,21 +35,89 @@
    "provinces": [
     {
      "name": "Abra",
-     "code": "141400000",
-     "municipalities": []
+     "code": "140100000",
+     "municipalities": [
+      "Bangued",
+      "Boliney",
+      "Bucay",
+      "Bucloc",
+      "Daguioman",
+      "Danglas",
+      "Dolores",
+      "La Paz",
+      "Lacub",
+      "Lagangilang",
+      "Lagayan",
+      "Langiden",
+      "Licuan-Baay",
+      "Luba",
+      "Malibcong",
+      "Manabo",
+      "Peñarrubia",
+      "Pidigan",
+      "Pilar",
+      "Sallapadan",
+      "San Isidro",
+      "San Juan",
+      "San Quintin",
+      "Tayum",
+      "Tineg",
+      "Tubo",
+      "Villaviciosa"
+     ]
     },
     {
      "name": "Apayao",
-     "code": "141500000",
-     "municipalities": []
+     "code": "148100000",
+     "municipalities": [
+      "Calanasan",
+      "Conner",
+      "Flora",
+      "Kabugao",
+      "Luna",
+      "Pudtol",
+      "Santa Marcela"
+     ]
     },
     {
      "name": "Benguet",
-     "code": "141600000",
-     "municipalities": []
+     "code": "141100000",
+     "municipalities": [
+      "Atok",
+      "Bakun",
+      "Bokod",
+      "Buguias",
+      "City of Baguio",
+      "Itogon",
+      "Kabayan",
+      "Kapangan",
+      "Kibungan",
+      "La Trinidad",
+      "Mankayan",
+      "Sablan",
+      "Tuba",
+      "Tublay"
+     ]
     },
     {
      "name": "Ifugao",
+     "code": "142700000",
+     "municipalities": [
+      "Aguinaldo",
+      "Alfonso Lista",
+      "Asipulo",
+      "Banaue",
+      "Hingyon",
+      "Hungduan",
+      "Kiangan",
+      "Lagawe",
+      "Lamut",
+      "Mayoyao",
+      "Tinoc"
+     ]
+    },
+    {
+     "name": "Kalinga",
      "code": "143200000",
      "municipalities": [
       "Balbalan",
@@ -61,11 +129,6 @@
       "Tanudan",
       "Tinglayan"
      ]
-    },
-    {
-     "name": "Kalinga",
-     "code": "143300000",
-     "municipalities": []
     },
     {
      "name": "Mountain Province",
@@ -246,6 +309,18 @@
    "provinces": [
     {
      "name": "Batanes",
+     "code": "020900000",
+     "municipalities": [
+      "Basco",
+      "Itbayat",
+      "Ivana",
+      "Mahatao",
+      "Sabtang",
+      "Uyugan"
+     ]
+    },
+    {
+     "name": "Cagayan",
      "code": "021500000",
      "municipalities": [
       "Abulug",
@@ -278,11 +353,6 @@
       "Tuao",
       "Tuguegarao City"
      ]
-    },
-    {
-     "name": "Cagayan",
-     "code": "021700000",
-     "municipalities": []
     },
     {
      "name": "Isabela",
@@ -368,6 +438,20 @@
    "provinces": [
     {
      "name": "Aurora",
+     "code": "037700000",
+     "municipalities": [
+      "Baler",
+      "Casiguran",
+      "Dilasag",
+      "Dinalungan",
+      "Dingalan",
+      "Dipaculao",
+      "Maria Aurora",
+      "San Luis"
+     ]
+    },
+    {
+     "name": "Bataan",
      "code": "030800000",
      "municipalities": [
       "Abucay",
@@ -385,7 +469,7 @@
      ]
     },
     {
-     "name": "Bataan",
+     "name": "Bulacan",
      "code": "031400000",
      "municipalities": [
       "Angat",
@@ -413,11 +497,6 @@
       "San Rafael",
       "Santa Maria"
      ]
-    },
-    {
-     "name": "Bulacan",
-     "code": "031900000",
-     "municipalities": []
     },
     {
      "name": "Nueva Ecija",
@@ -848,6 +927,67 @@
     },
     {
      "name": "Camarines Norte",
+     "code": "051600000",
+     "municipalities": [
+      "Basud",
+      "Capalonga",
+      "Daet",
+      "Jose Panganiban",
+      "Labo",
+      "Mercedes",
+      "Paracale",
+      "San Lorenzo Ruiz",
+      "San Vicente",
+      "Santa Elena",
+      "Talisay",
+      "Vinzons"
+     ]
+    },
+    {
+     "name": "Camarines Sur",
+     "code": "051700000",
+     "municipalities": [
+      "Baao",
+      "Balatan",
+      "Bato",
+      "Bombon",
+      "Buhi",
+      "Bula",
+      "Cabusao",
+      "Calabanga",
+      "Camaligan",
+      "Canaman",
+      "Caramoan",
+      "City of Iriga",
+      "City of Naga",
+      "Del Gallego",
+      "Gainza",
+      "Garchitorena",
+      "Goa",
+      "Lagonoy",
+      "Libmanan",
+      "Lupi",
+      "Magarao",
+      "Milaor",
+      "Minalabac",
+      "Nabua",
+      "Ocampo",
+      "Pamplona",
+      "Pasacao",
+      "Pili",
+      "Presentacion",
+      "Ragay",
+      "Sagñay",
+      "San Fernando",
+      "San Jose",
+      "Sipocot",
+      "Siruma",
+      "Tigaon",
+      "Tinambac"
+     ]
+    },
+    {
+     "name": "Catanduanes",
      "code": "052000000",
      "municipalities": [
       "Bagamanoc",
@@ -862,16 +1002,6 @@
       "Viga",
       "Virac"
      ]
-    },
-    {
-     "name": "Camarines Sur",
-     "code": "052100000",
-     "municipalities": []
-    },
-    {
-     "name": "Catanduanes",
-     "code": "052200000",
-     "municipalities": []
     },
     {
      "name": "Masbate",
@@ -999,6 +1129,17 @@
     },
     {
      "name": "Guimaras",
+     "code": "067900000",
+     "municipalities": [
+      "Buenavista",
+      "Jordan",
+      "Nueva Valencia",
+      "San Lorenzo",
+      "Sibunag"
+     ]
+    },
+    {
+     "name": "Iloilo",
      "code": "063000000",
      "municipalities": [
       "Ajuy",
@@ -1046,11 +1187,6 @@
       "Tubungan",
       "Zarraga"
      ]
-    },
-    {
-     "name": "Iloilo",
-     "code": "063600000",
-     "municipalities": []
     },
     {
      "name": "Negros Occidental",
@@ -1259,6 +1395,20 @@
    "code": "080000000",
    "provinces": [
     {
+     "name": "Biliran",
+     "code": "087800000",
+     "municipalities": [
+      "Almeria",
+      "Biliran",
+      "Cabucgayan",
+      "Caibiran",
+      "Culaba",
+      "Kawayan",
+      "Maripipi",
+      "Naval"
+     ]
+    },
+    {
      "name": "Eastern Samar",
      "code": "082600000",
      "municipalities": [
@@ -1338,11 +1488,36 @@
     },
     {
      "name": "Northern Samar",
-     "code": "084300000",
-     "municipalities": []
+     "code": "084800000",
+     "municipalities": [
+      "Allen",
+      "Biri",
+      "Bobon",
+      "Capul",
+      "Catarman",
+      "Catubig",
+      "Gamay",
+      "Laoang",
+      "Lapinig",
+      "Las Navas",
+      "Lavezares",
+      "Lope De Vega",
+      "Mapanas",
+      "Mondragon",
+      "Palapag",
+      "Pambujan",
+      "Rosario",
+      "San Antonio",
+      "San Isidro",
+      "San Jose",
+      "San Roque",
+      "San Vicente",
+      "Silvino Lobos",
+      "Victoria"
+     ]
     },
     {
-     "name": "Samar (Western Samar)",
+     "name": "Samar",
      "code": "086000000",
      "municipalities": [
       "Almagro",
@@ -1397,20 +1572,6 @@
       "Sogod",
       "Tomas Oppus"
      ]
-    },
-    {
-     "name": "Biliran",
-     "code": "087800000",
-     "municipalities": [
-      "Almeria",
-      "Biliran",
-      "Cabucgayan",
-      "Caibiran",
-      "Culaba",
-      "Kawayan",
-      "Maripipi",
-      "Naval"
-     ]
     }
    ]
   },
@@ -1419,7 +1580,7 @@
    "code": "090000000",
    "provinces": [
     {
-     "name": "Zamboanga del Norte",
+     "name": "Zamboanga Del Norte",
      "code": "097200000",
      "municipalities": [
       "Bacungan",
@@ -1452,7 +1613,7 @@
      ]
     },
     {
-     "name": "Zamboanga del Sur",
+     "name": "Zamboanga Del Sur",
      "code": "097300000",
      "municipalities": [
       "Aurora",
@@ -1553,7 +1714,7 @@
      ]
     },
     {
-     "name": "Lanao del Norte",
+     "name": "Lanao Del Norte",
      "code": "103500000",
      "municipalities": [
       "Bacolod",
@@ -1643,58 +1804,7 @@
    "code": "110000000",
    "provinces": [
     {
-     "name": "Davao de Oro",
-     "code": "112300000",
-     "municipalities": [
-      "Asuncion",
-      "Braulio E. Dujali",
-      "Carmen",
-      "City of Panabo",
-      "City of Tagum",
-      "Island Garden City of Samal",
-      "Kapalong",
-      "New Corella",
-      "San Isidro",
-      "Santo Tomas",
-      "Talaingod"
-     ]
-    },
-    {
-     "name": "Davao del Norte",
-     "code": "112400000",
-     "municipalities": [
-      "Bansalan",
-      "City of Davao",
-      "City of Digos",
-      "Hagonoy",
-      "Kiblawan",
-      "Magsaysay",
-      "Malalag",
-      "Matanao",
-      "Padada",
-      "Santa Cruz",
-      "Sulop"
-     ]
-    },
-    {
-     "name": "Davao del Sur",
-     "code": "112500000",
-     "municipalities": [
-      "Baganga",
-      "Banaybanay",
-      "Boston",
-      "Caraga",
-      "Cateel",
-      "City of Mati",
-      "Governor Generoso",
-      "Lupon",
-      "Manay",
-      "San Isidro",
-      "Tarragona"
-     ]
-    },
-    {
-     "name": "Davao Occidental",
+     "name": "Davao De Oro",
      "code": "118200000",
      "municipalities": [
       "Compostela",
@@ -1711,9 +1821,66 @@
      ]
     },
     {
+     "name": "Davao Del Norte",
+     "code": "112300000",
+     "municipalities": [
+      "Asuncion",
+      "Braulio E. Dujali",
+      "Carmen",
+      "City of Panabo",
+      "City of Tagum",
+      "Island Garden City of Samal",
+      "Kapalong",
+      "New Corella",
+      "San Isidro",
+      "Santo Tomas",
+      "Talaingod"
+     ]
+    },
+    {
+     "name": "Davao Del Sur",
+     "code": "112400000",
+     "municipalities": [
+      "Bansalan",
+      "City of Davao",
+      "City of Digos",
+      "Hagonoy",
+      "Kiblawan",
+      "Magsaysay",
+      "Malalag",
+      "Matanao",
+      "Padada",
+      "Santa Cruz",
+      "Sulop"
+     ]
+    },
+    {
+     "name": "Davao Occidental",
+     "code": "118600000",
+     "municipalities": [
+      "Don Marcelino",
+      "Jose Abad Santos",
+      "Malita",
+      "Santa Maria",
+      "Sarangani"
+     ]
+    },
+    {
      "name": "Davao Oriental",
-     "code": "112600000",
-     "municipalities": []
+     "code": "112500000",
+     "municipalities": [
+      "Baganga",
+      "Banaybanay",
+      "Boston",
+      "Caraga",
+      "Cateel",
+      "City of Mati",
+      "Governor Generoso",
+      "Lupon",
+      "Manay",
+      "San Isidro",
+      "Tarragona"
+     ]
     }
    ]
   },
@@ -1722,7 +1889,7 @@
    "code": "120000000",
    "provinces": [
     {
-     "name": "Cotabato (North Cotabato)",
+     "name": "Cotabato",
      "code": "124700000",
      "municipalities": [
       "Alamada",
@@ -1747,6 +1914,19 @@
     },
     {
      "name": "Sarangani",
+     "code": "128000000",
+     "municipalities": [
+      "Alabel",
+      "Glan",
+      "Kiamba",
+      "Maasim",
+      "Maitum",
+      "Malapatan",
+      "Malungon"
+     ]
+    },
+    {
+     "name": "South Cotabato",
      "code": "126300000",
      "municipalities": [
       "Banga",
@@ -1764,7 +1944,7 @@
      ]
     },
     {
-     "name": "South Cotabato",
+     "name": "Sultan Kudarat",
      "code": "126500000",
      "municipalities": [
       "Bagumbayan",
@@ -1780,11 +1960,6 @@
       "President Quirino",
       "Sen. Ninoy Aquino"
      ]
-    },
-    {
-     "name": "Sultan Kudarat",
-     "code": "126700000",
-     "municipalities": []
     }
    ]
   },
@@ -1793,7 +1968,7 @@
    "code": "160000000",
    "provinces": [
     {
-     "name": "Agusan del Norte",
+     "name": "Agusan Del Norte",
      "code": "160200000",
      "municipalities": [
       "Buenavista",
@@ -1811,7 +1986,7 @@
      ]
     },
     {
-     "name": "Agusan del Sur",
+     "name": "Agusan Del Sur",
      "code": "160300000",
      "municipalities": [
       "Bunawan",
@@ -1832,36 +2007,19 @@
     },
     {
      "name": "Dinagat Islands",
-     "code": "166800000",
+     "code": "168500000",
      "municipalities": [
-      "Barobo",
-      "Bayabas",
-      "Cagwait",
-      "Cantilan",
-      "Carmen",
-      "Carrascal",
-      "City of Bislig",
-      "City of Tandag",
-      "Cortes",
-      "Hinatuan",
-      "Lanuza",
-      "Lianga",
-      "Lingig",
-      "Madrid",
-      "Marihatag",
-      "San Agustin",
-      "San Miguel",
-      "Tagbina",
-      "Tago"
+      "Basilisa",
+      "Cagdianao",
+      "Dinagat",
+      "Libjo",
+      "Loreto",
+      "San Jose",
+      "Tubajon"
      ]
     },
     {
-     "name": "Surigao del Norte",
-     "code": "166600000",
-     "municipalities": []
-    },
-    {
-     "name": "Surigao del Sur",
+     "name": "Surigao Del Norte",
      "code": "166700000",
      "municipalities": [
       "Alegria",
@@ -1886,42 +2044,185 @@
       "Tagana-An",
       "Tubod"
      ]
+    },
+    {
+     "name": "Surigao Del Sur",
+     "code": "166800000",
+     "municipalities": [
+      "Barobo",
+      "Bayabas",
+      "Cagwait",
+      "Cantilan",
+      "Carmen",
+      "Carrascal",
+      "City of Bislig",
+      "City of Tandag",
+      "Cortes",
+      "Hinatuan",
+      "Lanuza",
+      "Lianga",
+      "Lingig",
+      "Madrid",
+      "Marihatag",
+      "San Agustin",
+      "San Miguel",
+      "Tagbina",
+      "Tago"
+     ]
     }
    ]
   },
   {
-   "name": "BARMM — Bangsamoro",
-   "code": "190000000",
+   "name": "BARMM",
+   "code": "150000000",
    "provinces": [
     {
      "name": "Basilan",
-     "code": "198500000",
-     "municipalities": []
+     "code": "150700000",
+     "municipalities": [
+      "Akbar",
+      "Al-Barka",
+      "City of Lamitan",
+      "Hadji Mohammad Ajul",
+      "Hadji Muhtamad",
+      "Lantawan",
+      "Maluso",
+      "Sumisip",
+      "Tabuan-Lasa",
+      "Tipo-Tipo",
+      "Tuburan",
+      "Ungkaya Pukan"
+     ]
     },
     {
-     "name": "Lanao del Sur",
-     "code": "193600000",
-     "municipalities": []
+     "name": "Lanao Del Sur",
+     "code": "153600000",
+     "municipalities": [
+      "Amai Manabilang",
+      "Bacolod-Kalawi",
+      "Balabagan",
+      "Balindong",
+      "Bayang",
+      "Binidayan",
+      "Buadiposo-Buntong",
+      "Bubong",
+      "Butig",
+      "Calanogas",
+      "City of Marawi",
+      "Ditsaan-Ramain",
+      "Ganassi",
+      "Kapai",
+      "Kapatagan",
+      "Lumba-Bayabao",
+      "Lumbaca-Unayan",
+      "Lumbatan",
+      "Lumbayanague",
+      "Madalum",
+      "Madamba",
+      "Maguing",
+      "Malabang",
+      "Marantao",
+      "Marogong",
+      "Masiu",
+      "Mulondo",
+      "Pagayawan",
+      "Piagapo",
+      "Picong",
+      "Poona Bayabao",
+      "Pualas",
+      "Saguiaran",
+      "Sultan Dumalondong",
+      "Tagoloan Ii",
+      "Tamparan",
+      "Taraka",
+      "Tubaran",
+      "Tugaya",
+      "Wao"
+     ]
     },
     {
-     "name": "Maguindanao del Norte",
-     "code": "198600000",
-     "municipalities": []
-    },
-    {
-     "name": "Maguindanao del Sur",
-     "code": "199700000",
-     "municipalities": []
+     "name": "Maguindanao",
+     "code": "153800000",
+     "municipalities": [
+      "Ampatuan",
+      "Barira",
+      "Buldon",
+      "Buluan",
+      "Datu Abdullah Sangki",
+      "Datu Anggal Midtimbang",
+      "Datu Blah T. Sinsuat",
+      "Datu Hoffer Ampatuan",
+      "Datu Odin Sinsuat",
+      "Datu Paglas",
+      "Datu Piang",
+      "Datu Salibo",
+      "Datu Saudi-Ampatuan",
+      "Datu Unsay",
+      "Gen. s.k. Pendatun",
+      "Guindulungan",
+      "Kabuntalan",
+      "Mamasapano",
+      "Mangudadatu",
+      "Matanog",
+      "Northern Kabuntalan",
+      "Pagagawan",
+      "Pagalungan",
+      "Paglat",
+      "Pandag",
+      "Parang",
+      "Rajah Buayan",
+      "Shariff Aguak",
+      "Shariff Saydona Mustapha",
+      "South Upi",
+      "Sultan Kudarat",
+      "Sultan Mastura",
+      "Sultan Sa Barongis",
+      "Talayan",
+      "Talitay",
+      "Upi"
+     ]
     },
     {
      "name": "Sulu",
-     "code": "198900000",
-     "municipalities": []
+     "code": "156600000",
+     "municipalities": [
+      "Hadji Panglima Tahil",
+      "Indanan",
+      "Jolo",
+      "Kalingalan Caluang",
+      "Lugus",
+      "Luuk",
+      "Maimbung",
+      "Old Panamao",
+      "Omar",
+      "Pandami",
+      "Panglima Estino",
+      "Pangutaran",
+      "Parang",
+      "Pata",
+      "Patikul",
+      "Siasi",
+      "Talipao",
+      "Tapul",
+      "Tongkil"
+     ]
     },
     {
      "name": "Tawi-Tawi",
-     "code": "199800000",
-     "municipalities": []
+     "code": "157000000",
+     "municipalities": [
+      "Bongao",
+      "Languyan",
+      "Mapun",
+      "Panglima Sugala",
+      "Sapa-Sapa",
+      "Sibutu",
+      "Simunul",
+      "Sitangkai",
+      "South Ubian",
+      "Tandubas",
+      "Turtle Islands"
+     ]
     }
    ]
   }
