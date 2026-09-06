@@ -1,8 +1,13 @@
 import { useEffect, useState, useRef } from "react";
-import { REGIONS, getProvinces } from "@/lib/psgc";
+import phLocations from "@/data/ph-locations.json";
 import { Label } from "@/components/ui/label";
 import { ChevronDown, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface PhProvince { name: string; code: string; municipalities: string[] }
+interface PhRegion { name: string; code: string; provinces: PhProvince[] }
+const PH_REGIONS = (phLocations as { regions: PhRegion[] }).regions;
+
 
 interface LocationValue {
   region: string;
