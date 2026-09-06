@@ -131,45 +131,81 @@ function SearchableSelect({
 
 const PSGC_API = "https://psgc.gitlab.io/api";
 
+async function fetchWithTimeout(url: string, ms = 5000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error("bad status");
+    return (await res.json()) as { code: string; name: string }[];
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 const LocationDropdowns = ({ value, onChange }: Props) => {
   const [municipalities, setMunicipalities] = useState<GeoItem[]>([]);
   const [barangays, setBarangays] = useState<GeoItem[]>([]);
   const [loadingMuni, setLoadingMuni] = useState(false);
   const [loadingBrgy, setLoadingBrgy] = useState(false);
+  const [brgyFallback, setBrgyFallback] = useState(false);
 
-  const regionOptions: GeoItem[] = REGIONS.map((r) => ({ code: r.code, name: r.name }));
-  const currentRegion = REGIONS.find((r) => r.name === value.region);
+  const regionOptions: GeoItem[] = PH_REGIONS.map((r) => ({ code: r.code, name: r.name }));
+  const currentRegion = PH_REGIONS.find((r) => r.name === value.region);
   const provinceOptions: GeoItem[] = currentRegion
-    ? getProvinces(currentRegion.code).map((p) => ({ code: p.code, name: p.name }))
+    ? currentRegion.provinces.map((p) => ({ code: p.code, name: p.name }))
     : [];
 
+  // Municipalities: PSGC API first (5s timeout), silent fallback to local JSON
   useEffect(() => {
+    let cancelled = false;
     if (!value.provinceCode) { setMunicipalities([]); return; }
+
+    const localList = (): GeoItem[] => {
+      const prov = PH_REGIONS.flatMap((r) => r.provinces).find(
+        (p) => p.code === value.provinceCode || p.name === value.province
+      );
+      return (prov?.municipalities ?? []).map((n) => ({ code: `local-${n}`, name: n }));
+    };
+
     setLoadingMuni(true);
-    fetch(`${PSGC_API}/provinces/${value.provinceCode}/cities-municipalities/`)
-      .then((r) => r.json())
-      .then((data: { code: string; name: string }[]) => {
+    fetchWithTimeout(`${PSGC_API}/provinces/${value.provinceCode}/cities-municipalities/`)
+      .then((data) => {
+        if (cancelled) return;
+        if (!Array.isArray(data) || data.length === 0) { setMunicipalities(localList()); return; }
         setMunicipalities(
           [...data].sort((a, b) => a.name.localeCompare(b.name)).map((d) => ({ code: d.code, name: d.name }))
         );
       })
-      .catch(() => setMunicipalities([]))
-      .finally(() => setLoadingMuni(false));
-  }, [value.provinceCode]);
+      .catch(() => { if (!cancelled) setMunicipalities(localList()); })
+      .finally(() => { if (!cancelled) setLoadingMuni(false); });
 
+    return () => { cancelled = true; };
+  }, [value.provinceCode, value.province]);
+
+  // Barangays: PSGC API first (5s timeout), fallback to free text input
   useEffect(() => {
-    if (!value.municipalityCode) { setBarangays([]); return; }
+    let cancelled = false;
+    if (!value.municipalityCode || value.municipalityCode.startsWith("local-")) {
+      setBarangays([]);
+      setBrgyFallback(Boolean(value.municipality));
+      return;
+    }
     setLoadingBrgy(true);
-    fetch(`${PSGC_API}/cities-municipalities/${value.municipalityCode}/barangays/`)
-      .then((r) => r.json())
-      .then((data: { code: string; name: string }[]) => {
+    setBrgyFallback(false);
+    fetchWithTimeout(`${PSGC_API}/cities-municipalities/${value.municipalityCode}/barangays/`)
+      .then((data) => {
+        if (cancelled) return;
+        if (!Array.isArray(data) || data.length === 0) { setBarangays([]); setBrgyFallback(true); return; }
         setBarangays(
           [...data].sort((a, b) => a.name.localeCompare(b.name)).map((d) => ({ code: d.code, name: d.name }))
         );
       })
-      .catch(() => setBarangays([]))
-      .finally(() => setLoadingBrgy(false));
-  }, [value.municipalityCode]);
+      .catch(() => { if (!cancelled) { setBarangays([]); setBrgyFallback(true); } })
+      .finally(() => { if (!cancelled) setLoadingBrgy(false); });
+
+    return () => { cancelled = true; };
+  }, [value.municipalityCode, value.municipality]);
 
   const handleRegion = (item: GeoItem) => {
     onChange({ region: item.name, province: "", municipality: "", barangay: "", provinceCode: "", municipalityCode: "" });
@@ -222,21 +258,40 @@ const LocationDropdowns = ({ value, onChange }: Props) => {
         onChange={handleMunicipality}
         disabled={!value.province || loadingMuni}
       />
-      <SearchableSelect
-        id="barangay"
-        label="Barangay *"
-        placeholder={
-          loadingBrgy ? "Naglo-load…" :
-          value.municipality ? "Pumili ng barangay" : "Pumili muna ng bayan"
-        }
-        options={barangays}
-        value={value.barangay}
-        onChange={handleBarangay}
-        disabled={!value.municipality || loadingBrgy}
-      />
+      {brgyFallback && !loadingBrgy ? (
+        <div className="space-y-2">
+          <Label htmlFor="barangay" className="text-base">Barangay *</Label>
+          <input
+            id="barangay"
+            value={value.barangay}
+            disabled={!value.municipality}
+            onChange={(e) => onChange({ ...value, barangay: e.target.value })}
+            placeholder="Ilagay ang pangalan ng barangay"
+            className={cn(
+              "w-full min-h-[52px] px-4 rounded-md border border-input bg-background text-base",
+              "focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground",
+              !value.municipality && "bg-muted text-muted-foreground cursor-not-allowed"
+            )}
+          />
+        </div>
+      ) : (
+        <SearchableSelect
+          id="barangay"
+          label="Barangay *"
+          placeholder={
+            loadingBrgy ? "Naglo-load…" :
+            value.municipality ? "Pumili ng barangay" : "Pumili muna ng bayan"
+          }
+          options={barangays}
+          value={value.barangay}
+          onChange={handleBarangay}
+          disabled={!value.municipality || loadingBrgy}
+        />
+      )}
     </div>
   );
 };
+
 
 export default LocationDropdowns;
 export type { LocationValue };
