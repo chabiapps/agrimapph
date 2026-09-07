@@ -20,6 +20,7 @@ interface Props {
   status: string;
   onStatusChange: (v: string) => void;
   commodities: string[];
+  onReset: () => void;
 }
 
 const MapFilterSheet = ({
@@ -28,6 +29,7 @@ const MapFilterSheet = ({
   commodity, onCommodityChange,
   status, onStatusChange,
   commodities,
+  onReset,
 }: Props) => {
   const { t } = useLang();
   const activeCount =
@@ -45,7 +47,7 @@ const MapFilterSheet = ({
         >
           <SlidersHorizontal className="h-5 w-5" />
           {activeCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary ring-2 ring-card" />
+            <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-card" aria-label="Filters active" />
           )}
         </button>
       </SheetTrigger>
