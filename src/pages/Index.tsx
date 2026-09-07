@@ -138,14 +138,33 @@ const Index = () => {
   }, []);
 
 
+  // Commodity dropdown options: distinct subcategory values straight from
+  // agri_reports, scoped to the selected category (all categories when "all").
+  const [dbCommodities, setDbCommodities] = useState<string[]>([]);
+  useEffect(() => {
+    let active = true;
+    let q = db.from("agri_reports").select("subcategory").not("subcategory", "is", null);
+    if (category !== "all") q = q.eq("category", category);
+    q.then(({ data }) => {
+      if (!active || !data) return;
+      const vals = [...new Set((data as { subcategory: string | null }[])
+        .map((r) => r.subcategory)
+        .filter(Boolean) as string[])].sort();
+      setDbCommodities(vals);
+    });
+    return () => { active = false; };
+  }, [category]);
+
   const commodities = useMemo(() => {
+    if (dbCommodities.length > 0) return dbCommodities;
+    // Fallback while the fetch is in flight: derive from loaded reports.
     const inCat = (r: AgriReport) => {
       if (category === "all") return true;
       const c = (r.category ?? inferCategory(r.commodity)) as string;
       return c === category;
     };
     return [...new Set(reports.filter(inCat).map((r) => r.commodity).filter(Boolean) as string[])].sort();
-  }, [reports, category]);
+  }, [dbCommodities, reports, category]);
 
   const mapReports = useMemo(
     () => reports.filter((r) => (r.record_type ?? "current_supply") === mapMode),
