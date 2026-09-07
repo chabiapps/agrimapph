@@ -240,6 +240,14 @@ const Index = () => {
               </button>
             </div>
             <AgriMap reports={filtered} onPinClick={handlePinClick} mode={mapMode} verifiedTiers={verifiedTiers} />
+            {filtered.length === 0 && (
+              <div className="absolute inset-0 z-[400] flex items-center justify-center pointer-events-none">
+                <div className="bg-card/95 backdrop-blur border border-border rounded-2xl shadow-lg px-6 py-4 text-center">
+                  <p className="text-base font-semibold text-foreground">Walang rekord para sa filter na ito</p>
+                  <p className="text-sm text-muted-foreground mt-1">Subukan ang ibang kategorya, produkto, o status.</p>
+                </div>
+              </div>
+            )}
             <MapFilterSheet
               open={filterOpen}
               onOpenChange={(o) => { setFilterOpen(o); if (o) setSelected(null); }}
