@@ -231,6 +231,7 @@ const Index = () => {
               status={status}
               onStatusChange={setStatus}
               commodities={commodities}
+              onReset={() => { setCategory("all"); setCommodity("all"); setStatus("all"); }}
             />
             <PinPopup
               report={selected}
