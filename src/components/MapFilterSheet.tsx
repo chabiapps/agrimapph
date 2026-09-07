@@ -145,6 +145,16 @@ const MapFilterSheet = ({
               })}
             </div>
           </div>
+
+          {/* Reset */}
+          <button
+            type="button"
+            onClick={onReset}
+            disabled={activeCount === 0}
+            className="w-full min-h-[52px] rounded-xl border-2 border-border bg-card text-base font-semibold text-foreground hover:bg-accent transition-colors disabled:opacity-40"
+          >
+            I-reset ang mga filter / Reset filters
+          </button>
         </div>
       </SheetContent>
     </Sheet>
