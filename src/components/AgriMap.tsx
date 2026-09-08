@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { getCommodityIcon } from "@/lib/categories";
 
 interface AgriReport {
@@ -83,9 +86,27 @@ const makeSupplyIcon = (color: string, emoji: string, tier?: string) =>
   });
 
 
+const makeClusterIcon = (cluster: { getChildCount: () => number }) => {
+  const count = cluster.getChildCount();
+  const size = count < 10 ? 38 : count < 50 ? 46 : 56;
+  return L.divIcon({
+    className: "",
+    html: `<div style="
+      width:${size}px;height:${size}px;border-radius:50%;
+      background:rgba(22,163,74,0.85);border:3px solid #fff;color:#fff;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:700;font-size:${count < 100 ? 14 : 12}px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.3);">${count}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+};
+
 const AgriMap = ({ reports, onPinClick, mode = "current_supply", verifiedTiers = {} }: AgriMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
+  const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
+
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
