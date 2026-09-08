@@ -1,14 +1,7 @@
 import { SlidersHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useLang } from "@/lib/i18n";
-import { CATEGORIES, CategoryKey } from "@/lib/categories";
+import { CATEGORIES, CategoryKey, getCommodityIcon } from "@/lib/categories";
 
 interface Props {
   open: boolean;
