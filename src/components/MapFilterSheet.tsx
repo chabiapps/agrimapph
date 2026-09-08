@@ -98,20 +98,42 @@ const MapFilterSheet = ({
             </div>
           </div>
 
-          {/* Commodity dropdown (scoped to selected category) */}
+          {/* Commodity pills (scoped to selected category) */}
           <div>
             <div className="text-sm font-semibold text-muted-foreground mb-2">{t("commodity")}</div>
-            <Select value={commodity} onValueChange={onCommodityChange}>
-              <SelectTrigger className="w-full min-h-[52px] text-base">
-                <SelectValue placeholder={t("commodity")} />
-              </SelectTrigger>
-              <SelectContent className="text-base">
-                <SelectItem value="all" className="min-h-[44px] text-base">{t("allCommodities")}</SelectItem>
-                {commodities.map((c) => (
-                  <SelectItem key={c} value={c} className="min-h-[44px] text-base">{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+              <button
+                type="button"
+                onClick={() => onCommodityChange("all")}
+                className={`shrink-0 px-4 py-2.5 rounded-full border text-sm font-semibold transition-all min-h-[44px] ${
+                  commodity === "all"
+                    ? "bg-green-600 border-green-600 text-white"
+                    : "bg-card border-border text-foreground/80 hover:bg-accent"
+                }`}
+                aria-pressed={commodity === "all"}
+              >
+                Lahat
+              </button>
+              {commodities.map((c) => {
+                const isActive = commodity === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => onCommodityChange(isActive ? "all" : c)}
+                    className={`shrink-0 px-4 py-2.5 rounded-full border text-sm font-semibold transition-all min-h-[44px] flex items-center gap-1.5 ${
+                      isActive
+                        ? "bg-green-600 border-green-600 text-white"
+                        : "bg-card border-border text-foreground/80 hover:bg-accent"
+                    }`}
+                    aria-pressed={isActive}
+                  >
+                    <span className="text-base leading-none">{getCommodityIcon(c)}</span>
+                    <span>{c}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Status */}
