@@ -22,6 +22,19 @@ const AuthModal = ({ open, onOpenChange, initialMode = "login" }: Props) => {
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
+  const googleSignIn = async () => {
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) {
+      toast({ title: "Google sign-in failed", description: error.message, variant: "destructive" });
+      setBusy(false);
+    }
+    // On success the browser redirects to Google; nothing more to do here.
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
