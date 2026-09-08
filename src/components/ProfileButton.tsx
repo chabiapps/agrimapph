@@ -13,7 +13,7 @@ const ProfileButton = () => {
     <Link
       to="/settings/profile"
       aria-label="Aking profile"
-      className="fixed top-3 right-16 z-[1001] h-10 w-10 rounded-full bg-card/90 backdrop-blur-md border border-border shadow-md flex items-center justify-center hover:bg-accent transition-colors"
+      className="fixed bottom-[84px] right-3 z-[1001] h-11 w-11 rounded-full bg-card/90 backdrop-blur-md border border-border shadow-md flex items-center justify-center hover:bg-accent transition-colors"
     >
       {profile?.user_type ? (
         <span className="text-xl leading-none">{meta.emoji}</span>
