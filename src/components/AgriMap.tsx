@@ -163,25 +163,25 @@ const AgriMap = ({ reports, onPinClick, mode = "current_supply", verifiedTiers =
   return (
     <div className="relative h-full w-full">
       <div ref={mapRef} className="h-full w-full" />
-      <div className="absolute left-3 bottom-3 z-[500] bg-card/95 backdrop-blur border border-border rounded-xl shadow-lg px-3 py-2 text-[11px] leading-tight text-foreground pointer-events-none">
-        {mode === "planting_intention" ? (
-          <>
-            <div className="font-semibold mb-1">Paparating</div>
-            <div className="flex items-center gap-1.5">🌱 <span>Nakatanim</span></div>
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-[#f97316]" />
-              <span>Aanihin sa loob ng 2 linggo</span>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="font-semibold mb-1">Kulay ng pin</div>
-            <div className="flex items-center gap-1.5">🟢 <span>Sobra</span></div>
-            <div className="flex items-center gap-1.5">🔴 <span>Kulang</span></div>
-            <div className="flex items-center gap-1.5">🟡 <span>Sapat</span></div>
-          </>
-        )}
-        <div className="mt-1 pt-1 border-t border-border">Bilog na may numero = dami ng tala sa lugar</div>
+      <div className="absolute left-3 bottom-[84px] z-[500] bg-card/95 backdrop-blur border border-border rounded-full shadow-lg px-2.5 py-1 text-[10px] leading-tight text-foreground pointer-events-none">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <span className="inline-block h-2 w-2 rounded-full bg-[#22c55e]" />
+            <span>Sobra</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="inline-block h-2 w-2 rounded-full bg-[#ef4444]" />
+            <span>Kulang</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="inline-block h-2 w-2 rounded-full bg-[#eab308]" />
+            <span>Sapat</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span>🌱</span>
+            <span>Paparating</span>
+          </div>
+        </div>
       </div>
     </div>
   );
