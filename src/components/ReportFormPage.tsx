@@ -26,32 +26,49 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 
 const nonEmpty = (label: string) => z.string().trim().min(1, { message: `${label} ay kailangan` }).max(100);
 
-const harvestSchema = z.object({
+const VOLUME_VALUES = ["Napakataas", "Mataas", "Katamtaman", "Mababa"] as const;
+
+/**
+ * Unified report schema. Validates the whole form object BEFORE any Supabase
+ * INSERT so incomplete data can never reach the database (prevents errors
+ * like "null value in column volume").
+ */
+const baseReportSchema = z.object({
+  record_type: z.enum(["current_supply", "planting_intention"]),
+  category: nonEmpty("Kategorya"),
   commodity: nonEmpty("Produkto"),
-  price: z.coerce.number().min(0).max(100000),
-  status: z.enum(["surplus", "deficit", "balanced"]),
-  volume_level: z.string().min(1, { message: "Piliin ang dami ng produkto" }),
+  volume_level: z.enum(VOLUME_VALUES, { message: "Piliin ang dami ng produkto" }),
+  status: z.enum(["surplus", "deficit", "balanced"], { message: "Piliin ang kalagayan" }),
+  price: z.string().trim(),
   region: nonEmpty("Rehiyon"),
   province: nonEmpty("Lalawigan"),
   municipality: nonEmpty("Bayan"),
   barangay: nonEmpty("Barangay"),
-  lat: z.coerce.number().min(-90).max(90),
-  lng: z.coerce.number().min(-180).max(180),
+  lat: z.coerce.number({ message: "Ilagay ang latitude" }).min(-90, "Hindi wastong latitude").max(90, "Hindi wastong latitude"),
+  lng: z.coerce.number({ message: "Ilagay ang longitude" }).min(-180, "Hindi wastong longitude").max(180, "Hindi wastong longitude"),
+  planted_date: z.string().trim(),
+  expected_harvest_date: z.string().trim(),
   notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
-const plantingSchema = z.object({
-  commodity: nonEmpty("Produkto"),
-  volume_level: z.string().min(1, { message: "Piliin ang dami ng produkto" }),
-  planted_date: z.string().min(1),
-  expected_harvest_date: z.string().min(1),
-  region: nonEmpty("Rehiyon"),
-  province: nonEmpty("Lalawigan"),
-  municipality: nonEmpty("Bayan"),
-  barangay: nonEmpty("Barangay"),
-  lat: z.coerce.number().min(-90).max(90),
-  lng: z.coerce.number().min(-180).max(180),
+const reportSchema = baseReportSchema.superRefine((v, ctx) => {
+  if (v.record_type === "current_supply") {
+    const n = Number(v.price);
+    if (v.price === "" || Number.isNaN(n) || n <= 0 || n > 100000) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["price"], message: "Ilagay ang tamang presyo (higit sa 0)" });
+    }
+  }
+  if (v.record_type === "planting_intention") {
+    if (!v.planted_date) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["planted_date"], message: "Piliin ang petsa ng pagtatanim" });
+    }
+    if (!v.expected_harvest_date) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["expected_harvest_date"], message: "Piliin ang inaasahang petsa ng ani" });
+    }
+  }
 });
+
+type FieldErrors = Record<string, string>;
 
 type StageOption = { value: string; label: string; icon: string };
 
@@ -118,6 +135,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   const [location, setLocation] = useState<LocationValue>(emptyLocation());
   const [volumeError, setVolumeError] = useState(false);
   const [locErrors, setLocErrors] = useState<{ region?: string; province?: string; municipality?: string; barangay?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [form, setForm] = useState({
     commodity: "",
@@ -140,7 +158,20 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     messenger_username: "",
   });
 
-  const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const update = (k: string, v: string) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    setFieldErrors((prev) => {
+      if (!prev[k]) return prev;
+      const next = { ...prev };
+      delete next[k];
+      return next;
+    });
+  };
+
+  const FieldError = ({ field }: { field: string }) =>
+    fieldErrors[field] ? (
+      <p className="text-sm text-destructive font-medium" role="alert">{fieldErrors[field]}</p>
+    ) : null;
 
   /** Strip URLs, @, spaces and any invalid characters from a Messenger handle. */
   const sanitizeMessenger = (raw: string) => {
@@ -223,41 +254,47 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       return;
     }
 
-    // Inline location validation
-    const locErr: typeof locErrors = {};
-    if (!location.region) locErr.region = "Piliin ang rehiyon";
-    if (!location.province) locErr.province = "Piliin ang lalawigan";
-    if (!location.municipality) locErr.municipality = "Piliin ang bayan/lungsod";
-    if (!location.barangay) locErr.barangay = "Piliin ang barangay";
-    setLocErrors(locErr);
-    if (Object.keys(locErr).length > 0) {
-      toast({ title: "Kulang ang lokasyon", description: Object.values(locErr)[0], variant: "destructive" });
-      return;
-    }
-
-    if (!form.volume_level) {
-      setVolumeError(true);
-      toast({ title: "Kulang ang detalye", description: "Piliin ang dami ng produkto", variant: "destructive" });
-      return;
-    }
-    setVolumeError(false);
-    setSubmitting(true);
-
-    const normalized = {
-      ...form,
+    // Validate the entire form object against reportSchema BEFORE any Supabase
+    // INSERT. On failure: show inline errors next to each failing field and stop.
+    const candidate = {
+      record_type: recordType,
+      category,
+      commodity: form.commodity,
+      volume_level: form.volume_level,
+      status: form.status,
+      price: form.price,
       ...location,
       lat: form.lat.trim() === "" ? "0" : form.lat,
       lng: form.lng.trim() === "" ? "0" : form.lng,
+      planted_date: form.planted_date,
+      expected_harvest_date: form.expected_harvest_date,
+      notes: form.notes,
     };
 
-    if (!isPlanting) {
-      const parsed = harvestSchema.safeParse(normalized);
-      if (!parsed.success) {
-        setSubmitting(false);
-        toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
-        return;
+    const parsed = reportSchema.safeParse(candidate);
+    if (!parsed.success) {
+      const errs: FieldErrors = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? "");
+        if (key && !errs[key]) errs[key] = issue.message;
       }
-      const d = parsed.data;
+      setFieldErrors(errs);
+      setLocErrors({
+        region: errs.region, province: errs.province,
+        municipality: errs.municipality, barangay: errs.barangay,
+      });
+      setVolumeError(Boolean(errs.volume_level));
+      toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
+      return;
+    }
+    setFieldErrors({});
+    setLocErrors({});
+    setVolumeError(false);
+    setSubmitting(true);
+
+    const d = parsed.data;
+
+    if (!isPlanting) {
       const isAnimal = category === "poultry" || category === "livestock";
       const isFish = category === "fish";
       const volumeStr = isAnimal
@@ -267,7 +304,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const insertPayload = {
         record_type: "current_supply",
         category, subcategory: d.commodity,
-        price: d.price, price_unit: priceUnit, status: d.status,
+        price: Number(d.price), price_unit: priceUnit, status: d.status,
         region: d.region, province: d.province,
         municipality: d.municipality, barangay: d.barangay,
         lat: d.lat, lng: d.lng, notes: d.notes || null, volume: volumeStr,
@@ -289,13 +326,6 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       return;
     }
 
-    const parsed = plantingSchema.safeParse(normalized);
-    if (!parsed.success) {
-      setSubmitting(false);
-      toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
-      return;
-    }
-    const d = parsed.data;
     const volumeCombined = [d.volume_level, form.expected_volume].filter(Boolean).join(" — ") || null;
     const notesCombined = [
       form.reporter_name && `Pangalan: ${form.reporter_name}`,
@@ -485,6 +515,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                 </datalist>
               </>
             )}
+            <FieldError field="commodity" />
           </div>
 
           {/* Current supply specific fields */}
@@ -503,6 +534,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                     </SelectContent>
                   </Select>
                 </div>
+                <FieldError field="price" />
               </div>
               <div className="space-y-2">
                 <Label className="text-base">Kalagayan *</Label>
@@ -514,6 +546,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                     <SelectItem value="balanced" className="text-base">{t("balanced")} (Balanced)</SelectItem>
                   </SelectContent>
                 </Select>
+                <FieldError field="status" />
               </div>
 
               {/* Volume toggles — current supply */}
@@ -546,10 +579,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
               <div className="space-y-2">
                 <Label htmlFor="planted_date" className="text-base font-bold">{dateLabels.start} *</Label>
                 <Input id="planted_date" type="date" value={form.planted_date} onChange={(e) => update("planted_date", e.target.value)} className="min-h-[52px] text-base" required />
+                <FieldError field="planted_date" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="expected_harvest_date" className="text-base font-bold">{dateLabels.end} *</Label>
                 <Input id="expected_harvest_date" type="date" value={form.expected_harvest_date} onChange={(e) => update("expected_harvest_date", e.target.value)} className="min-h-[52px] text-base" required />
+                <FieldError field="expected_harvest_date" />
                 {weeksFromNow !== null && (
                   <p className="text-sm font-semibold text-green-700">
                     {weeksFromNow <= 0 ? "Handa na ngayon" : `Mga ${weeksFromNow} linggo mula ngayon`}
@@ -625,10 +660,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
               <div className="space-y-2">
                 <Label htmlFor="lat" className="text-base">Latitude *</Label>
                 <Input id="lat" type="number" step="any" value={form.lat} onChange={(e) => { gpsLocked.current = true; update("lat", e.target.value); setCoordSource("manual"); }} className="min-h-[52px] text-base" required />
+                <FieldError field="lat" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lng" className="text-base">Longitude *</Label>
                 <Input id="lng" type="number" step="any" value={form.lng} onChange={(e) => { gpsLocked.current = true; update("lng", e.target.value); setCoordSource("manual"); }} className="min-h-[52px] text-base" required />
+                <FieldError field="lng" />
               </div>
             </div>
             <Button type="button" variant="outline" onClick={useMyLocation} className="w-full min-h-[52px] text-base">
