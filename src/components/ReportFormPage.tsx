@@ -515,6 +515,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                 </datalist>
               </>
             )}
+            <FieldError field="commodity" />
           </div>
 
           {/* Current supply specific fields */}
@@ -533,6 +534,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                     </SelectContent>
                   </Select>
                 </div>
+                <FieldError field="price" />
               </div>
               <div className="space-y-2">
                 <Label className="text-base">Kalagayan *</Label>
@@ -544,6 +546,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                     <SelectItem value="balanced" className="text-base">{t("balanced")} (Balanced)</SelectItem>
                   </SelectContent>
                 </Select>
+                <FieldError field="status" />
               </div>
 
               {/* Volume toggles — current supply */}
@@ -576,10 +579,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
               <div className="space-y-2">
                 <Label htmlFor="planted_date" className="text-base font-bold">{dateLabels.start} *</Label>
                 <Input id="planted_date" type="date" value={form.planted_date} onChange={(e) => update("planted_date", e.target.value)} className="min-h-[52px] text-base" required />
+                <FieldError field="planted_date" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="expected_harvest_date" className="text-base font-bold">{dateLabels.end} *</Label>
                 <Input id="expected_harvest_date" type="date" value={form.expected_harvest_date} onChange={(e) => update("expected_harvest_date", e.target.value)} className="min-h-[52px] text-base" required />
+                <FieldError field="expected_harvest_date" />
                 {weeksFromNow !== null && (
                   <p className="text-sm font-semibold text-green-700">
                     {weeksFromNow <= 0 ? "Handa na ngayon" : `Mga ${weeksFromNow} linggo mula ngayon`}
@@ -655,10 +660,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
               <div className="space-y-2">
                 <Label htmlFor="lat" className="text-base">Latitude *</Label>
                 <Input id="lat" type="number" step="any" value={form.lat} onChange={(e) => { gpsLocked.current = true; update("lat", e.target.value); setCoordSource("manual"); }} className="min-h-[52px] text-base" required />
+                <FieldError field="lat" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lng" className="text-base">Longitude *</Label>
                 <Input id="lng" type="number" step="any" value={form.lng} onChange={(e) => { gpsLocked.current = true; update("lng", e.target.value); setCoordSource("manual"); }} className="min-h-[52px] text-base" required />
+                <FieldError field="lng" />
               </div>
             </div>
             <Button type="button" variant="outline" onClick={useMyLocation} className="w-full min-h-[52px] text-base">
