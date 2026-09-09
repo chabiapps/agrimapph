@@ -26,32 +26,49 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 
 const nonEmpty = (label: string) => z.string().trim().min(1, { message: `${label} ay kailangan` }).max(100);
 
-const harvestSchema = z.object({
+const VOLUME_VALUES = ["Napakataas", "Mataas", "Katamtaman", "Mababa"] as const;
+
+/**
+ * Unified report schema. Validates the whole form object BEFORE any Supabase
+ * INSERT so incomplete data can never reach the database (prevents errors
+ * like "null value in column volume").
+ */
+const baseReportSchema = z.object({
+  record_type: z.enum(["current_supply", "planting_intention"]),
+  category: nonEmpty("Kategorya"),
   commodity: nonEmpty("Produkto"),
-  price: z.coerce.number().min(0).max(100000),
-  status: z.enum(["surplus", "deficit", "balanced"]),
-  volume_level: z.string().min(1, { message: "Piliin ang dami ng produkto" }),
+  volume_level: z.enum(VOLUME_VALUES, { message: "Piliin ang dami ng produkto" }),
+  status: z.enum(["surplus", "deficit", "balanced"], { message: "Piliin ang kalagayan" }),
+  price: z.string().trim(),
   region: nonEmpty("Rehiyon"),
   province: nonEmpty("Lalawigan"),
   municipality: nonEmpty("Bayan"),
   barangay: nonEmpty("Barangay"),
-  lat: z.coerce.number().min(-90).max(90),
-  lng: z.coerce.number().min(-180).max(180),
+  lat: z.coerce.number({ message: "Ilagay ang latitude" }).min(-90, "Hindi wastong latitude").max(90, "Hindi wastong latitude"),
+  lng: z.coerce.number({ message: "Ilagay ang longitude" }).min(-180, "Hindi wastong longitude").max(180, "Hindi wastong longitude"),
+  planted_date: z.string().trim(),
+  expected_harvest_date: z.string().trim(),
   notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
-const plantingSchema = z.object({
-  commodity: nonEmpty("Produkto"),
-  volume_level: z.string().min(1, { message: "Piliin ang dami ng produkto" }),
-  planted_date: z.string().min(1),
-  expected_harvest_date: z.string().min(1),
-  region: nonEmpty("Rehiyon"),
-  province: nonEmpty("Lalawigan"),
-  municipality: nonEmpty("Bayan"),
-  barangay: nonEmpty("Barangay"),
-  lat: z.coerce.number().min(-90).max(90),
-  lng: z.coerce.number().min(-180).max(180),
+const reportSchema = baseReportSchema.superRefine((v, ctx) => {
+  if (v.record_type === "current_supply") {
+    const n = Number(v.price);
+    if (v.price === "" || Number.isNaN(n) || n <= 0 || n > 100000) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["price"], message: "Ilagay ang tamang presyo (higit sa 0)" });
+    }
+  }
+  if (v.record_type === "planting_intention") {
+    if (!v.planted_date) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["planted_date"], message: "Piliin ang petsa ng pagtatanim" });
+    }
+    if (!v.expected_harvest_date) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["expected_harvest_date"], message: "Piliin ang inaasahang petsa ng ani" });
+    }
+  }
 });
+
+type FieldErrors = Record<string, string>;
 
 type StageOption = { value: string; label: string; icon: string };
 
