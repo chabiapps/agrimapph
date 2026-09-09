@@ -127,35 +127,64 @@ const AgriMap = ({ reports, onPinClick, mode = "current_supply", verifiedTiers =
     const map = mapInstance.current;
     if (!map) return;
 
-    const toRemove: L.Layer[] = [];
-    map.eachLayer((layer) => {
-      if (layer instanceof L.CircleMarker || layer instanceof L.Marker) toRemove.push(layer);
-    });
-    toRemove.forEach((l) => map.removeLayer(l));
+    if (!clusterRef.current) {
+      clusterRef.current = L.markerClusterGroup({
+        showCoverageOnHover: false,
+        maxClusterRadius: 50,
+        spiderfyOnMaxZoom: true,
+        iconCreateFunction: makeClusterIcon,
+      });
+      map.addLayer(clusterRef.current);
+    }
+    const group = clusterRef.current;
+    group.clearLayers();
 
     reports.forEach((report) => {
       const emoji = getCommodityIcon(report.subcategory, report.category);
       const tier = report.reported_by ? verifiedTiers[report.reported_by] : undefined;
 
+      let marker: L.Marker;
       if (mode === "planting_intention") {
         let nearHarvest = false;
         if (report.expected_harvest_date) {
           const diffDays = (new Date(report.expected_harvest_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
           if (!isNaN(diffDays) && diffDays >= 0 && diffDays <= 14) nearHarvest = true;
         }
-        L.marker([report.lat, report.lng], { icon: makePlantingIcon(emoji, nearHarvest, tier) })
-          .addTo(map)
-          .on("click", () => onPinClick(report));
+        marker = L.marker([report.lat, report.lng], { icon: makePlantingIcon(emoji, nearHarvest, tier) });
       } else {
         const color = statusColor[report.status] || "#9ca3af";
-        L.marker([report.lat, report.lng], { icon: makeSupplyIcon(color, emoji, tier) })
-          .addTo(map)
-          .on("click", () => onPinClick(report));
+        marker = L.marker([report.lat, report.lng], { icon: makeSupplyIcon(color, emoji, tier) });
       }
+      marker.on("click", () => onPinClick(report));
+      group.addLayer(marker);
     });
   }, [reports, onPinClick, mode, verifiedTiers]);
 
-  return <div ref={mapRef} className="h-full w-full" />;
+  return (
+    <div className="relative h-full w-full">
+      <div ref={mapRef} className="h-full w-full" />
+      <div className="absolute left-3 bottom-3 z-[500] bg-card/95 backdrop-blur border border-border rounded-xl shadow-lg px-3 py-2 text-[11px] leading-tight text-foreground pointer-events-none">
+        {mode === "planting_intention" ? (
+          <>
+            <div className="font-semibold mb-1">Paparating</div>
+            <div className="flex items-center gap-1.5">🌱 <span>Nakatanim</span></div>
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-[#f97316]" />
+              <span>Aanihin sa loob ng 2 linggo</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="font-semibold mb-1">Kulay ng pin</div>
+            <div className="flex items-center gap-1.5">🟢 <span>Sobra</span></div>
+            <div className="flex items-center gap-1.5">🔴 <span>Kulang</span></div>
+            <div className="flex items-center gap-1.5">🟡 <span>Sapat</span></div>
+          </>
+        )}
+        <div className="mt-1 pt-1 border-t border-border">Bilog na may numero = dami ng tala sa lugar</div>
+      </div>
+    </div>
+  );
 };
 
 export default AgriMap;
