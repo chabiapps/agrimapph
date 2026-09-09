@@ -135,6 +135,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   const [location, setLocation] = useState<LocationValue>(emptyLocation());
   const [volumeError, setVolumeError] = useState(false);
   const [locErrors, setLocErrors] = useState<{ region?: string; province?: string; municipality?: string; barangay?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [form, setForm] = useState({
     commodity: "",
@@ -157,7 +158,20 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     messenger_username: "",
   });
 
-  const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const update = (k: string, v: string) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    setFieldErrors((prev) => {
+      if (!prev[k]) return prev;
+      const next = { ...prev };
+      delete next[k];
+      return next;
+    });
+  };
+
+  const FieldError = ({ field }: { field: string }) =>
+    fieldErrors[field] ? (
+      <p className="text-sm text-destructive font-medium" role="alert">{fieldErrors[field]}</p>
+    ) : null;
 
   /** Strip URLs, @, spaces and any invalid characters from a Messenger handle. */
   const sanitizeMessenger = (raw: string) => {
