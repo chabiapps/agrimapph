@@ -254,41 +254,47 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       return;
     }
 
-    // Inline location validation
-    const locErr: typeof locErrors = {};
-    if (!location.region) locErr.region = "Piliin ang rehiyon";
-    if (!location.province) locErr.province = "Piliin ang lalawigan";
-    if (!location.municipality) locErr.municipality = "Piliin ang bayan/lungsod";
-    if (!location.barangay) locErr.barangay = "Piliin ang barangay";
-    setLocErrors(locErr);
-    if (Object.keys(locErr).length > 0) {
-      toast({ title: "Kulang ang lokasyon", description: Object.values(locErr)[0], variant: "destructive" });
-      return;
-    }
-
-    if (!form.volume_level) {
-      setVolumeError(true);
-      toast({ title: "Kulang ang detalye", description: "Piliin ang dami ng produkto", variant: "destructive" });
-      return;
-    }
-    setVolumeError(false);
-    setSubmitting(true);
-
-    const normalized = {
-      ...form,
+    // Validate the entire form object against reportSchema BEFORE any Supabase
+    // INSERT. On failure: show inline errors next to each failing field and stop.
+    const candidate = {
+      record_type: recordType,
+      category,
+      commodity: form.commodity,
+      volume_level: form.volume_level,
+      status: form.status,
+      price: form.price,
       ...location,
       lat: form.lat.trim() === "" ? "0" : form.lat,
       lng: form.lng.trim() === "" ? "0" : form.lng,
+      planted_date: form.planted_date,
+      expected_harvest_date: form.expected_harvest_date,
+      notes: form.notes,
     };
 
-    if (!isPlanting) {
-      const parsed = harvestSchema.safeParse(normalized);
-      if (!parsed.success) {
-        setSubmitting(false);
-        toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
-        return;
+    const parsed = reportSchema.safeParse(candidate);
+    if (!parsed.success) {
+      const errs: FieldErrors = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? "");
+        if (key && !errs[key]) errs[key] = issue.message;
       }
-      const d = parsed.data;
+      setFieldErrors(errs);
+      setLocErrors({
+        region: errs.region, province: errs.province,
+        municipality: errs.municipality, barangay: errs.barangay,
+      });
+      setVolumeError(Boolean(errs.volume_level));
+      toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
+      return;
+    }
+    setFieldErrors({});
+    setLocErrors({});
+    setVolumeError(false);
+    setSubmitting(true);
+
+    const d = parsed.data;
+
+    if (!isPlanting) {
       const isAnimal = category === "poultry" || category === "livestock";
       const isFish = category === "fish";
       const volumeStr = isAnimal
@@ -298,7 +304,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const insertPayload = {
         record_type: "current_supply",
         category, subcategory: d.commodity,
-        price: d.price, price_unit: priceUnit, status: d.status,
+        price: Number(d.price), price_unit: priceUnit, status: d.status,
         region: d.region, province: d.province,
         municipality: d.municipality, barangay: d.barangay,
         lat: d.lat, lng: d.lng, notes: d.notes || null, volume: volumeStr,
@@ -320,13 +326,6 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       return;
     }
 
-    const parsed = plantingSchema.safeParse(normalized);
-    if (!parsed.success) {
-      setSubmitting(false);
-      toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
-      return;
-    }
-    const d = parsed.data;
     const volumeCombined = [d.volume_level, form.expected_volume].filter(Boolean).join(" — ") || null;
     const notesCombined = [
       form.reporter_name && `Pangalan: ${form.reporter_name}`,
