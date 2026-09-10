@@ -13,6 +13,7 @@ import MapFilterSheet from "@/components/MapFilterSheet";
 import AuthGate from "@/components/AuthGate";
 import ProfileButton from "@/components/ProfileButton";
 import ReportTabGate from "@/components/ReportTabGate";
+import Dashboard from "@/components/Dashboard";
 import { CategoryKey, inferCategory } from "@/lib/categories";
 
 
