@@ -301,6 +301,8 @@ const Index = () => {
           </div>
         )}
 
+        {tab === "dashboard" && <Dashboard />}
+
         {tab === "report" && (
           <AuthGate>
             <ReportTabGate onSubmitted={(rt) => {
