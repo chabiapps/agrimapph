@@ -5,6 +5,7 @@ import "leaflet.markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { getCommodityIcon } from "@/lib/categories";
+import { commonLocation, LocationSelection } from "@/lib/locationProfile";
 
 interface AgriReport {
   id: string;
@@ -29,6 +30,7 @@ interface AgriReport {
 interface AgriMapProps {
   reports: AgriReport[];
   onPinClick: (report: AgriReport) => void;
+  onClusterClick?: (location: LocationSelection) => void;
   mode?: "current_supply" | "planting_intention";
   /** reported_by (user id) -> verification_tier */
   verifiedTiers?: Record<string, string>;
@@ -102,7 +104,7 @@ const makeClusterIcon = (cluster: { getChildCount: () => number }) => {
   });
 };
 
-const AgriMap = ({ reports, onPinClick, mode = "current_supply", verifiedTiers = {} }: AgriMapProps) => {
+const AgriMap = ({ reports, onPinClick, onClusterClick, mode = "current_supply", verifiedTiers = {} }: AgriMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
@@ -156,9 +158,21 @@ const AgriMap = ({ reports, onPinClick, mode = "current_supply", verifiedTiers =
         marker = L.marker([report.lat, report.lng], { icon: makeSupplyIcon(color, emoji, tier) });
       }
       marker.on("click", () => onPinClick(report));
+      (marker.options as L.MarkerOptions & { agriReport?: AgriReport }).agriReport = report;
       group.addLayer(marker);
     });
-  }, [reports, onPinClick, mode, verifiedTiers]);
+
+    const handleClusterClick = (event: L.LeafletEvent & { layer?: L.MarkerCluster }) => {
+      if (!onClusterClick || !event.layer) return;
+      const clusteredReports = event.layer.getAllChildMarkers()
+        .map((marker) => (marker.options as L.MarkerOptions & { agriReport?: AgriReport }).agriReport)
+        .filter((report): report is AgriReport => Boolean(report));
+      const location = commonLocation(clusteredReports);
+      if (location) onClusterClick(location);
+    };
+    group.on("clusterclick", handleClusterClick);
+    return () => { group.off("clusterclick", handleClusterClick); };
+  }, [reports, onPinClick, onClusterClick, mode, verifiedTiers]);
 
   return (
     <div className="relative h-full w-full">
