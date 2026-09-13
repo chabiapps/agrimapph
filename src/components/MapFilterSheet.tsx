@@ -1,14 +1,7 @@
 import { SlidersHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useLang } from "@/lib/i18n";
-import { CATEGORIES, CategoryKey } from "@/lib/categories";
+import { CATEGORIES, CategoryKey, getCommodityIcon } from "@/lib/categories";
 
 interface Props {
   open: boolean;
@@ -20,6 +13,7 @@ interface Props {
   status: string;
   onStatusChange: (v: string) => void;
   commodities: string[];
+  onReset: () => void;
 }
 
 const MapFilterSheet = ({
@@ -28,6 +22,7 @@ const MapFilterSheet = ({
   commodity, onCommodityChange,
   status, onStatusChange,
   commodities,
+  onReset,
 }: Props) => {
   const { t } = useLang();
   const activeCount =
@@ -45,7 +40,7 @@ const MapFilterSheet = ({
         >
           <SlidersHorizontal className="h-5 w-5" />
           {activeCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary ring-2 ring-card" />
+            <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-card" aria-label="Filters active" />
           )}
         </button>
       </SheetTrigger>
@@ -103,20 +98,42 @@ const MapFilterSheet = ({
             </div>
           </div>
 
-          {/* Commodity dropdown (scoped to selected category) */}
+          {/* Commodity pills (scoped to selected category) */}
           <div>
             <div className="text-sm font-semibold text-muted-foreground mb-2">{t("commodity")}</div>
-            <Select value={commodity} onValueChange={onCommodityChange}>
-              <SelectTrigger className="w-full min-h-[52px] text-base">
-                <SelectValue placeholder={t("commodity")} />
-              </SelectTrigger>
-              <SelectContent className="text-base">
-                <SelectItem value="all" className="min-h-[44px] text-base">{t("allCommodities")}</SelectItem>
-                {commodities.map((c) => (
-                  <SelectItem key={c} value={c} className="min-h-[44px] text-base">{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+              <button
+                type="button"
+                onClick={() => onCommodityChange("all")}
+                className={`shrink-0 px-4 py-2.5 rounded-full border text-sm font-semibold transition-all min-h-[44px] ${
+                  commodity === "all"
+                    ? "bg-green-600 border-green-600 text-white"
+                    : "bg-card border-border text-foreground/80 hover:bg-accent"
+                }`}
+                aria-pressed={commodity === "all"}
+              >
+                Lahat
+              </button>
+              {commodities.map((c) => {
+                const isActive = commodity === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => onCommodityChange(isActive ? "all" : c)}
+                    className={`shrink-0 px-4 py-2.5 rounded-full border text-sm font-semibold transition-all min-h-[44px] flex items-center gap-1.5 ${
+                      isActive
+                        ? "bg-green-600 border-green-600 text-white"
+                        : "bg-card border-border text-foreground/80 hover:bg-accent"
+                    }`}
+                    aria-pressed={isActive}
+                  >
+                    <span className="text-base leading-none">{getCommodityIcon(c)}</span>
+                    <span>{c}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Status */}
@@ -143,6 +160,16 @@ const MapFilterSheet = ({
               })}
             </div>
           </div>
+
+          {/* Reset */}
+          <button
+            type="button"
+            onClick={onReset}
+            disabled={activeCount === 0}
+            className="w-full min-h-[52px] rounded-xl border-2 border-border bg-card text-base font-semibold text-foreground hover:bg-accent transition-colors disabled:opacity-40"
+          >
+            I-reset ang mga filter / Reset filters
+          </button>
         </div>
       </SheetContent>
     </Sheet>

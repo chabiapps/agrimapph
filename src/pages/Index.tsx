@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/db";
+import { useAuth } from "@/lib/AuthContext";
 import AgriMap from "@/components/AgriMap";
 import PinPopup from "@/components/PinPopup";
 import ReportsTable from "@/components/ReportsTable";
 import FilterBar from "@/components/FilterBar";
 import LanguageToggle from "@/components/LanguageToggle";
-import ReportFormPage from "@/components/ReportFormPage";
 import BottomNav, { Tab } from "@/components/BottomNav";
 import MapFilterSheet from "@/components/MapFilterSheet";
 import AuthGate from "@/components/AuthGate";
-import { useAuth } from "@/lib/AuthContext";
-import { LogOut } from "lucide-react";
+import ProfileButton from "@/components/ProfileButton";
+import ReportTabGate from "@/components/ReportTabGate";
+import Dashboard from "@/components/Dashboard";
 import { CategoryKey, inferCategory } from "@/lib/categories";
+
 
 interface AgriReport {
   id: string;
@@ -33,12 +37,16 @@ interface AgriReport {
   growth_stage: string | null;
   category: string | null;
   subcategory: string | null;
+  phone_number?: string | null;
+  messenger_username?: string | null;
+  reported_by?: string | null;
 }
 
 type MapMode = "current_supply" | "planting_intention";
 
 const Index = () => {
   const [reports, setReports] = useState<AgriReport[]>([]);
+  const [verifiedTiers, setVerifiedTiers] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<AgriReport | null>(null);
   const [tab, setTab] = useState<Tab>("map");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -49,10 +57,51 @@ const Index = () => {
   const [mapMode, setMapMode] = useState<MapMode>("current_supply");
   const [listType, setListType] = useState<"all" | "current_supply" | "planting_intention">("all");
 
+  // Signup leaves a placeholder profile row with no user_type — such users must
+  // finish onboarding before using the app. Returning users pass straight through.
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let active = true;
+    db.from("user_profiles")
+      .select("id, user_type")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        const row = data as { user_type?: string | null } | null;
+        if (active && row && !row.user_type) navigate("/onboarding", { replace: true });
+      });
+    return () => { active = false; };
+  }, [authLoading, user, navigate]);
+
+
+
+
   const fetchReports = useCallback(async () => {
-    const { data, error, status, statusText } = await supabase
+    const BASE_COLS =
+      "id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory, reported_by";
+
+    let { data, error, status, statusText } = (await supabase
       .from("agri_reports")
-      .select("id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory");
+      .select(`${BASE_COLS}, phone_number, messenger_username`)) as {
+      data: Record<string, unknown>[] | null;
+      error: { message: string } | null;
+      status: number;
+      statusText: string;
+    };
+
+    if (error) {
+      // Contact columns may not exist yet — fall back to the base column set.
+      ({ data, error, status, statusText } = (await supabase
+        .from("agri_reports")
+        .select(BASE_COLS)) as unknown as {
+        data: Record<string, unknown>[] | null;
+        error: { message: string } | null;
+        status: number;
+        statusText: string;
+      });
+    }
 
     console.log("[agri_reports] URL host:", "gnrhciktvgokhipvsvcq.supabase.co");
     console.log("[agri_reports] http status:", status, statusText);
@@ -64,7 +113,7 @@ const Index = () => {
     }
     if (data) {
       // DB has no `commodity` column — derive it from subcategory for downstream UI.
-      const mapped = data.map((r) => ({ ...r, commodity: r.subcategory ?? null })) as AgriReport[];
+      const mapped = data.map((r) => ({ ...r, commodity: (r.subcategory as string) ?? null })) as unknown as AgriReport[];
       console.log("[agri_reports] sample mapped row:", mapped[0]);
       setReports(mapped);
     }
@@ -74,14 +123,49 @@ const Index = () => {
     fetchReports();
   }, [fetchReports]);
 
+  // Verification tiers for pin badges (community / government verified reporters).
+  useEffect(() => {
+    let active = true;
+    db.from("user_profiles")
+      .select("id, verification_tier")
+      .in("verification_tier", ["community", "government"])
+      .then(({ data }) => {
+        if (!active || !data) return;
+        const map: Record<string, string> = {};
+        (data as { id: string; verification_tier: string }[]).forEach((p) => { map[p.id] = p.verification_tier; });
+        setVerifiedTiers(map);
+      });
+    return () => { active = false; };
+  }, []);
+
+
+  // Commodity dropdown options: distinct subcategory values straight from
+  // agri_reports, scoped to the selected category (all categories when "all").
+  const [dbCommodities, setDbCommodities] = useState<string[]>([]);
+  useEffect(() => {
+    let active = true;
+    let q = db.from("agri_reports").select("subcategory").not("subcategory", "is", null);
+    if (category !== "all") q = q.eq("category", category);
+    q.then(({ data }) => {
+      if (!active || !data) return;
+      const vals = [...new Set((data as { subcategory: string | null }[])
+        .map((r) => r.subcategory)
+        .filter(Boolean) as string[])].sort();
+      setDbCommodities(vals);
+    });
+    return () => { active = false; };
+  }, [category]);
+
   const commodities = useMemo(() => {
+    if (dbCommodities.length > 0) return dbCommodities;
+    // Fallback while the fetch is in flight: derive from loaded reports.
     const inCat = (r: AgriReport) => {
       if (category === "all") return true;
       const c = (r.category ?? inferCategory(r.commodity)) as string;
       return c === category;
     };
     return [...new Set(reports.filter(inCat).map((r) => r.commodity).filter(Boolean) as string[])].sort();
-  }, [reports, category]);
+  }, [dbCommodities, reports, category]);
 
   const mapReports = useMemo(
     () => reports.filter((r) => (r.record_type ?? "current_supply") === mapMode),
@@ -156,7 +240,15 @@ const Index = () => {
                 🌱 Paparating
               </button>
             </div>
-            <AgriMap reports={filtered} onPinClick={handlePinClick} mode={mapMode} />
+            <AgriMap reports={filtered} onPinClick={handlePinClick} mode={mapMode} verifiedTiers={verifiedTiers} />
+            {filtered.length === 0 && (
+              <div className="absolute inset-0 z-[400] flex items-center justify-center pointer-events-none">
+                <div className="bg-card/95 backdrop-blur border border-border rounded-2xl shadow-lg px-6 py-4 text-center">
+                  <p className="text-base font-semibold text-foreground">Walang rekord para sa filter na ito</p>
+                  <p className="text-sm text-muted-foreground mt-1">Subukan ang ibang kategorya, produkto, o status.</p>
+                </div>
+              </div>
+            )}
             <MapFilterSheet
               open={filterOpen}
               onOpenChange={(o) => { setFilterOpen(o); if (o) setSelected(null); }}
@@ -167,6 +259,7 @@ const Index = () => {
               status={status}
               onStatusChange={setStatus}
               commodities={commodities}
+              onReset={() => { setCategory("all"); setCommodity("all"); setStatus("all"); }}
             />
             <PinPopup
               report={selected}
@@ -208,9 +301,11 @@ const Index = () => {
           </div>
         )}
 
+        {tab === "dashboard" && <Dashboard />}
+
         {tab === "report" && (
           <AuthGate>
-            <ReportFormPage onSubmitted={(rt) => {
+            <ReportTabGate onSubmitted={(rt) => {
               fetchReports();
               if (rt === "planting_intention") setMapMode("planting_intention");
               setTab("map");
@@ -219,28 +314,11 @@ const Index = () => {
         )}
       </main>
 
-      <UserBadge />
+      <ProfileButton />
       <BottomNav tab={tab} onChange={setTab} />
     </div>
   );
 };
 
-const UserBadge = () => {
-  const { user, signOut } = useAuth();
-  if (!user) return null;
-  const initial = (user.email ?? "?").charAt(0).toUpperCase();
-  return (
-    <button
-      onClick={signOut}
-      title="Mag-logout"
-      className="fixed top-3 right-16 z-[1002] flex items-center gap-2 bg-card/95 backdrop-blur border border-border rounded-full pl-1 pr-3 py-1 shadow-lg hover:bg-muted transition-colors"
-    >
-      <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground grid place-items-center font-bold text-sm">
-        {initial}
-      </span>
-      <LogOut className="w-4 h-4 text-foreground/70" />
-    </button>
-  );
-};
 
 export default Index;

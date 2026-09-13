@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/i18n";
-import { CATEGORIES, CategoryKey, getCommodityIcon } from "@/lib/categories";
+import { CATEGORIES, CategoryKey, getCommodityIcon, getPriceMeta, PRICE_UNITS, PriceUnit } from "@/lib/categories";
 import LocationDropdowns, { LocationValue } from "@/components/LocationDropdowns";
+import MapPreview from "@/components/MapPreview";
+import { geocodeMunicipality, getProvinceCenter } from "@/lib/geoCoords";
 
 interface Props {
   onSubmitted?: (recordType?: "current_supply" | "planting_intention") => void;
@@ -24,32 +26,49 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 
 const nonEmpty = (label: string) => z.string().trim().min(1, { message: `${label} ay kailangan` }).max(100);
 
-const harvestSchema = z.object({
+const VOLUME_VALUES = ["Napakataas", "Mataas", "Katamtaman", "Mababa"] as const;
+
+/**
+ * Unified report schema. Validates the whole form object BEFORE any Supabase
+ * INSERT so incomplete data can never reach the database (prevents errors
+ * like "null value in column volume").
+ */
+const baseReportSchema = z.object({
+  record_type: z.enum(["current_supply", "planting_intention"]),
+  category: nonEmpty("Kategorya"),
   commodity: nonEmpty("Produkto"),
-  price: z.coerce.number().min(0).max(100000),
-  status: z.enum(["surplus", "deficit", "balanced"]),
-  volume_level: z.string().min(1, { message: "Piliin ang dami ng produkto" }),
+  volume_level: z.enum(VOLUME_VALUES, { message: "Piliin ang dami ng produkto" }),
+  status: z.enum(["surplus", "deficit", "balanced"], { message: "Piliin ang kalagayan" }),
+  price: z.string().trim(),
   region: nonEmpty("Rehiyon"),
   province: nonEmpty("Lalawigan"),
   municipality: nonEmpty("Bayan"),
   barangay: nonEmpty("Barangay"),
-  lat: z.coerce.number().min(-90).max(90),
-  lng: z.coerce.number().min(-180).max(180),
+  lat: z.coerce.number({ message: "Ilagay ang latitude" }).min(-90, "Hindi wastong latitude").max(90, "Hindi wastong latitude"),
+  lng: z.coerce.number({ message: "Ilagay ang longitude" }).min(-180, "Hindi wastong longitude").max(180, "Hindi wastong longitude"),
+  planted_date: z.string().trim(),
+  expected_harvest_date: z.string().trim(),
   notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
-const plantingSchema = z.object({
-  commodity: nonEmpty("Produkto"),
-  volume_level: z.string().min(1, { message: "Piliin ang dami ng produkto" }),
-  planted_date: z.string().min(1),
-  expected_harvest_date: z.string().min(1),
-  region: nonEmpty("Rehiyon"),
-  province: nonEmpty("Lalawigan"),
-  municipality: nonEmpty("Bayan"),
-  barangay: nonEmpty("Barangay"),
-  lat: z.coerce.number().min(-90).max(90),
-  lng: z.coerce.number().min(-180).max(180),
+const reportSchema = baseReportSchema.superRefine((v, ctx) => {
+  if (v.record_type === "current_supply") {
+    const n = Number(v.price);
+    if (v.price === "" || Number.isNaN(n) || n <= 0 || n > 100000) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["price"], message: "Ilagay ang tamang presyo (higit sa 0)" });
+    }
+  }
+  if (v.record_type === "planting_intention") {
+    if (!v.planted_date) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["planted_date"], message: "Piliin ang petsa ng pagtatanim" });
+    }
+    if (!v.expected_harvest_date) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["expected_harvest_date"], message: "Piliin ang inaasahang petsa ng ani" });
+    }
+  }
 });
+
+type FieldErrors = Record<string, string>;
 
 type StageOption = { value: string; label: string; icon: string };
 
@@ -116,6 +135,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   const [location, setLocation] = useState<LocationValue>(emptyLocation());
   const [volumeError, setVolumeError] = useState(false);
   const [locErrors, setLocErrors] = useState<{ region?: string; province?: string; municipality?: string; barangay?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [form, setForm] = useState({
     commodity: "",
@@ -134,15 +154,83 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
     weight: "",
     reporter_name: "",
     reporter_contact: "",
+    phone_number: "",
+    messenger_username: "",
   });
 
-  const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const update = (k: string, v: string) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    setFieldErrors((prev) => {
+      if (!prev[k]) return prev;
+      const next = { ...prev };
+      delete next[k];
+      return next;
+    });
+  };
+
+  const FieldError = ({ field }: { field: string }) =>
+    fieldErrors[field] ? (
+      <p className="text-sm text-destructive font-medium" role="alert">{fieldErrors[field]}</p>
+    ) : null;
+
+  /** Strip URLs, @, spaces and any invalid characters from a Messenger handle. */
+  const sanitizeMessenger = (raw: string) => {
+    let v = (raw ?? "").trim();
+    v = v.replace(/^https?:\/\//i, "").replace(/^www\./i, "");
+    v = v.replace(/^(m\.me|facebook\.com|fb\.com|messenger\.com)\//i, "");
+    v = v.split(/[?#]/)[0];
+    v = v.split("/").filter(Boolean)[0] ?? "";
+    v = v.replace(/@/g, "").replace(/\s+/g, "");
+    return v.replace(/[^A-Za-z0-9._-]/g, "");
+  };
+
+  // Coordinate resolution: dropdown lookup, overridden only by GPS / manual pin drag
+  const [coordSource, setCoordSource] = useState<"none" | "province" | "municipality" | "gps" | "manual">("none");
+  const [geoLoading, setGeoLoading] = useState(false);
+  const gpsLocked = useRef(false);
+
+  const setCoords = (lat: number, lng: number, source: typeof coordSource) => {
+    setForm((f) => ({ ...f, lat: lat.toFixed(6), lng: lng.toFixed(6) }));
+    setCoordSource(source);
+  };
+
+  useEffect(() => {
+    if (gpsLocked.current) return;
+    const { province, municipality } = location;
+    if (!province) return;
+
+    const center = getProvinceCenter(province);
+    if (!municipality) {
+      if (center) setCoords(center[0], center[1], "province");
+      return;
+    }
+
+    let cancelled = false;
+    setGeoLoading(true);
+    geocodeMunicipality(municipality, province)
+      .then((coords) => {
+        if (cancelled || gpsLocked.current) return;
+        if (coords) setCoords(coords[0], coords[1], "municipality");
+        else if (center) setCoords(center[0], center[1], "province");
+      })
+      .finally(() => { if (!cancelled) setGeoLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [location.province, location.municipality]);
+
 
   const isPlanting = recordType === "planting_intention";
   const subOptions = useMemo(
     () => CATEGORIES.find((c) => c.key === category)?.subcategories ?? [],
     [category]
   );
+
+  const priceMeta = useMemo(
+    () => getPriceMeta(category, form.commodity),
+    [category, form.commodity]
+  );
+  const [unitOverride, setUnitOverride] = useState<PriceUnit | null>(null);
+  const priceUnit: PriceUnit = unitOverride ?? priceMeta.unit;
 
   const weeksFromNow = useMemo(() => {
     if (!form.expected_harvest_date) return null;
@@ -153,6 +241,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
 
   const changeCategory = (k: CategoryKey) => {
     setCategory(k);
+    setUnitOverride(null);
     update("commodity", "");
     update("growth_stage", "");
   };
@@ -165,41 +254,47 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       return;
     }
 
-    // Inline location validation
-    const locErr: typeof locErrors = {};
-    if (!location.region) locErr.region = "Piliin ang rehiyon";
-    if (!location.province) locErr.province = "Piliin ang lalawigan";
-    if (!location.municipality) locErr.municipality = "Piliin ang bayan/lungsod";
-    if (!location.barangay) locErr.barangay = "Piliin ang barangay";
-    setLocErrors(locErr);
-    if (Object.keys(locErr).length > 0) {
-      toast({ title: "Kulang ang lokasyon", description: Object.values(locErr)[0], variant: "destructive" });
-      return;
-    }
-
-    if (!form.volume_level) {
-      setVolumeError(true);
-      toast({ title: "Kulang ang detalye", description: "Piliin ang dami ng produkto", variant: "destructive" });
-      return;
-    }
-    setVolumeError(false);
-    setSubmitting(true);
-
-    const normalized = {
-      ...form,
+    // Validate the entire form object against reportSchema BEFORE any Supabase
+    // INSERT. On failure: show inline errors next to each failing field and stop.
+    const candidate = {
+      record_type: recordType,
+      category,
+      commodity: form.commodity,
+      volume_level: form.volume_level,
+      status: form.status,
+      price: form.price,
       ...location,
       lat: form.lat.trim() === "" ? "0" : form.lat,
       lng: form.lng.trim() === "" ? "0" : form.lng,
+      planted_date: form.planted_date,
+      expected_harvest_date: form.expected_harvest_date,
+      notes: form.notes,
     };
 
-    if (!isPlanting) {
-      const parsed = harvestSchema.safeParse(normalized);
-      if (!parsed.success) {
-        setSubmitting(false);
-        toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
-        return;
+    const parsed = reportSchema.safeParse(candidate);
+    if (!parsed.success) {
+      const errs: FieldErrors = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? "");
+        if (key && !errs[key]) errs[key] = issue.message;
       }
-      const d = parsed.data;
+      setFieldErrors(errs);
+      setLocErrors({
+        region: errs.region, province: errs.province,
+        municipality: errs.municipality, barangay: errs.barangay,
+      });
+      setVolumeError(Boolean(errs.volume_level));
+      toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
+      return;
+    }
+    setFieldErrors({});
+    setLocErrors({});
+    setVolumeError(false);
+    setSubmitting(true);
+
+    const d = parsed.data;
+
+    if (!isPlanting) {
       const isAnimal = category === "poultry" || category === "livestock";
       const isFish = category === "fish";
       const volumeStr = isAnimal
@@ -209,11 +304,13 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       const insertPayload = {
         record_type: "current_supply",
         category, subcategory: d.commodity,
-        price: d.price, status: d.status,
+        price: Number(d.price), price_unit: priceUnit, status: d.status,
         region: d.region, province: d.province,
         municipality: d.municipality, barangay: d.barangay,
         lat: d.lat, lng: d.lng, notes: d.notes || null, volume: volumeStr,
         planted_date: isFish ? form.date_caught : null,
+        phone_number: form.phone_number.trim() || null,
+        messenger_username: sanitizeMessenger(form.messenger_username) || null,
         reported_by: user.id,
       };
       const { error } = await supabase.from("agri_reports").insert(insertPayload as never).select();
@@ -229,13 +326,6 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       return;
     }
 
-    const parsed = plantingSchema.safeParse(normalized);
-    if (!parsed.success) {
-      setSubmitting(false);
-      toast({ title: "Kulang ang detalye", description: parsed.error.issues[0].message, variant: "destructive" });
-      return;
-    }
-    const d = parsed.data;
     const volumeCombined = [d.volume_level, form.expected_volume].filter(Boolean).join(" — ") || null;
     const notesCombined = [
       form.reporter_name && `Pangalan: ${form.reporter_name}`,
@@ -249,12 +339,15 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
       status: "balanced",
       planted_date: d.planted_date,
       expected_harvest_date: d.expected_harvest_date,
+      volume: d.volume_level,
       expected_volume: volumeCombined,
       growth_stage: form.growth_stage || null,
       region: d.region, province: d.province,
       municipality: d.municipality, barangay: d.barangay,
       lat: d.lat, lng: d.lng,
       notes: notesCombined,
+      phone_number: form.phone_number.trim() || null,
+      messenger_username: sanitizeMessenger(form.messenger_username) || null,
       reported_by: user.id,
     };
     const { error } = await supabase.from("agri_reports").insert(plantingPayload as never).select();
@@ -276,12 +369,20 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
   };
 
   const useMyLocation = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      toast({ title: "Hindi suportado ang GPS sa device na ito", variant: "destructive" });
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
-      (pos) => { update("lat", String(pos.coords.latitude)); update("lng", String(pos.coords.longitude)); },
+      (pos) => {
+        gpsLocked.current = true;
+        setCoords(pos.coords.latitude, pos.coords.longitude, "gps");
+        toast({ title: "Nakuha ang iyong lokasyon" });
+      },
       () => toast({ title: "Hindi makuha ang lokasyon", variant: "destructive" })
     );
   };
+
 
   const stageOptions = STAGE_BY_CATEGORY[category] ?? STAGE_BY_CATEGORY.other;
   const dateLabels = DATE_LABELS[category] ?? DATE_LABELS.other;
@@ -414,14 +515,26 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                 </datalist>
               </>
             )}
+            <FieldError field="commodity" />
           </div>
 
           {/* Current supply specific fields */}
           {!isPlanting && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="price" className="text-base">Presyo (₱/kg) *</Label>
-                <Input id="price" type="number" step="0.01" value={form.price} onChange={(e) => update("price", e.target.value)} className="min-h-[52px] text-base" required />
+                <Label htmlFor="price" className="text-base">{priceMeta.label} *</Label>
+                <div className="flex gap-2">
+                  <Input id="price" type="number" step="0.01" value={form.price} onChange={(e) => update("price", e.target.value)} className="min-h-[52px] text-base flex-1" required />
+                  <Select value={priceUnit} onValueChange={(v) => setUnitOverride(v as PriceUnit)}>
+                    <SelectTrigger className="min-h-[52px] text-base w-[110px]" aria-label="Yunit ng presyo"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PRICE_UNITS.map((u) => (
+                        <SelectItem key={u} value={u} className="text-base">{u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <FieldError field="price" />
               </div>
               <div className="space-y-2">
                 <Label className="text-base">Kalagayan *</Label>
@@ -433,6 +546,7 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
                     <SelectItem value="balanced" className="text-base">{t("balanced")} (Balanced)</SelectItem>
                   </SelectContent>
                 </Select>
+                <FieldError field="status" />
               </div>
 
               {/* Volume toggles — current supply */}
@@ -465,10 +579,12 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
               <div className="space-y-2">
                 <Label htmlFor="planted_date" className="text-base font-bold">{dateLabels.start} *</Label>
                 <Input id="planted_date" type="date" value={form.planted_date} onChange={(e) => update("planted_date", e.target.value)} className="min-h-[52px] text-base" required />
+                <FieldError field="planted_date" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="expected_harvest_date" className="text-base font-bold">{dateLabels.end} *</Label>
                 <Input id="expected_harvest_date" type="date" value={form.expected_harvest_date} onChange={(e) => update("expected_harvest_date", e.target.value)} className="min-h-[52px] text-base" required />
+                <FieldError field="expected_harvest_date" />
                 {weeksFromNow !== null && (
                   <p className="text-sm font-semibold text-green-700">
                     {weeksFromNow <= 0 ? "Handa na ngayon" : `Mga ${weeksFromNow} linggo mula ngayon`}
@@ -543,16 +659,41 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="lat" className="text-base">Latitude *</Label>
-                <Input id="lat" type="number" step="any" value={form.lat} onChange={(e) => update("lat", e.target.value)} className="min-h-[52px] text-base" required />
+                <Input id="lat" type="number" step="any" value={form.lat} onChange={(e) => { gpsLocked.current = true; update("lat", e.target.value); setCoordSource("manual"); }} className="min-h-[52px] text-base" required />
+                <FieldError field="lat" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lng" className="text-base">Longitude *</Label>
-                <Input id="lng" type="number" step="any" value={form.lng} onChange={(e) => update("lng", e.target.value)} className="min-h-[52px] text-base" required />
+                <Input id="lng" type="number" step="any" value={form.lng} onChange={(e) => { gpsLocked.current = true; update("lng", e.target.value); setCoordSource("manual"); }} className="min-h-[52px] text-base" required />
+                <FieldError field="lng" />
               </div>
             </div>
             <Button type="button" variant="outline" onClick={useMyLocation} className="w-full min-h-[52px] text-base">
               📍 Gamitin ang aking lokasyon
             </Button>
+
+            {coordSource !== "none" && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">
+                  {geoLoading
+                    ? "Hinahanap ang koordinado…"
+                    : coordSource === "gps"
+                      ? "📍 Mula sa GPS ng iyong device"
+                      : coordSource === "municipality"
+                        ? `📌 Mula sa ${location.municipality}`
+                        : coordSource === "province"
+                          ? `📌 Gitna ng ${location.province} (walang eksaktong tugma sa bayan)`
+                          : "✍️ Manwal na inilagay"}
+                </p>
+                <MapPreview
+                  lat={Number(form.lat) || 12.8797}
+                  lng={Number(form.lng) || 121.774}
+                  emoji={getCommodityIcon(form.commodity, category)}
+                  onChange={(la, ln) => { gpsLocked.current = true; setCoords(la, ln, "manual"); }}
+                />
+              </div>
+            )}
+
           </div>
 
           {/* Reporter info (planting only) */}
@@ -568,6 +709,39 @@ const ReportFormPage = ({ onSubmitted }: Props) => {
               </div>
             </div>
           )}
+
+          {/* Contact info (optional) */}
+          <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="phone_number" className="text-base">Numero ng Telepono (opsyonal)</Label>
+              <Input
+                id="phone_number"
+                type="tel"
+                inputMode="tel"
+                placeholder="hal. 09171234567"
+                value={form.phone_number}
+                onChange={(e) => update("phone_number", e.target.value.replace(/[^0-9+]/g, "").slice(0, 20))}
+                className="min-h-[52px] text-base"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="messenger_username" className="text-base">Messenger Username (opsyonal)</Label>
+              <Input
+                id="messenger_username"
+                placeholder="hal. juandelacruz"
+                value={form.messenger_username}
+                onChange={(e) => update("messenger_username", sanitizeMessenger(e.target.value).slice(0, 50))}
+                className="min-h-[52px] text-base"
+              />
+              {form.messenger_username && (
+                <p className="text-sm text-muted-foreground">
+                  Ang iyong Messenger link: <span className="font-medium text-foreground">m.me/{form.messenger_username}</span>
+                </p>
+              )}
+            </div>
+          </div>
+
+
 
           {/* Notes */}
           <div className="space-y-2">
