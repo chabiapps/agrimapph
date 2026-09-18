@@ -1,80 +1,135 @@
 import { Search, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CATEGORIES, CategoryKey } from "@/lib/categories";
 import { useLang } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 interface FilterBarProps {
-  search: string;
-  onSearchChange: (v: string) => void;
+  mode: "map" | "list";
+  search?: string;
+  onSearchChange?: (v: string) => void;
+  category: CategoryKey | "all";
+  onCategoryChange: (v: CategoryKey | "all") => void;
   commodity: string;
   onCommodityChange: (v: string) => void;
-  status: string;
+  status: string[];
   onStatusChange: (v: string) => void;
   commodities: string[];
-  onExportCsv: () => void;
+  onExportCsv?: () => void;
+  onReset: () => void;
 }
 
 const FilterBar = ({
+  mode,
   search, onSearchChange,
+  category, onCategoryChange,
   commodity, onCommodityChange,
   status, onStatusChange,
   commodities,
   onExportCsv,
+  onReset,
 }: FilterBarProps) => {
-  const { t } = useLang();
+  const { lang } = useLang();
+
   return (
-    <div className="flex flex-wrap items-center gap-2 bg-card border-b border-border p-3 w-full">
-      <div className="relative flex-1 min-w-[160px]">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        <Input
-          placeholder={t("search")}
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10 min-h-[52px] text-base"
-        />
+    <div className="h-[48px] w-full bg-white border-b border-[#e5e7eb] px-4 flex items-center justify-between shrink-0 z-10">
+      <div className="flex items-center gap-3 h-full">
+        {/* Search Input (List Mode Only) */}
+        {mode === "list" && (
+          <>
+            <div className="relative w-[200px] h-full flex items-center">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={lang === "fil" ? "Maghanap..." : "Search..."}
+                value={search}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                className="h-full pl-9 text-[14px] focus-visible:ring-0 border-none bg-transparent shadow-none"
+              />
+            </div>
+            <div className="w-px h-4 bg-[#e5e7eb]" />
+          </>
+        )}
+
+        {/* Category Dropdown */}
+        <div className="relative w-[160px] h-full flex items-center">
+          <select
+            value={category}
+            onChange={(e) => { onCategoryChange(e.target.value as CategoryKey | "all"); onCommodityChange("all"); }}
+            className="w-full h-full bg-transparent text-[14px] font-medium text-foreground focus:outline-none cursor-pointer appearance-none"
+          >
+            <option value="all">Lahat ng Uri</option>
+            {CATEGORIES.map(c => (
+              <option key={c.key} value={c.key}>{c.icon} {c.label}</option>
+            ))}
+          </select>
+          <div className="absolute right-2 pointer-events-none text-muted-foreground text-[10px]">▼</div>
+        </div>
+
+        <div className="w-px h-4 bg-[#e5e7eb]" />
+
+        {/* Commodity Dropdown */}
+        <div className="relative w-[180px] h-full flex items-center">
+          <select
+            value={commodity}
+            onChange={(e) => onCommodityChange(e.target.value)}
+            className="w-full h-full bg-transparent text-[14px] font-medium text-foreground focus:outline-none cursor-pointer appearance-none"
+          >
+            <option value="all">Lahat ng Produkto</option>
+            {commodities.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <div className="absolute right-2 pointer-events-none text-muted-foreground text-[10px]">▼</div>
+        </div>
+
+        <div className="w-px h-4 bg-[#e5e7eb]" />
+
+        {/* Status Pills */}
+        <div className="flex items-center gap-1.5">
+          {[
+            { v: "surplus", l: "Sobra", c: "bg-green-500" },
+            { v: "deficit", l: "Kulang", c: "bg-red-500" },
+            { v: "balanced", l: "Sapat", c: "bg-yellow-500" },
+          ].map(({ v, l, c }) => {
+            const active = status.includes(v);
+            return (
+              <button
+                key={v}
+                onClick={() => onStatusChange(v)}
+                className={cn(
+                  "h-[28px] px-2.5 rounded-full border text-[12px] font-semibold transition-all",
+                  active ? `${c} text-white border-transparent` : `bg-white text-foreground/70 border-[#e5e7eb] hover:border-foreground/30`
+                )}
+              >
+                {l}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="w-px h-4 bg-[#e5e7eb]" />
+
+        <button
+          onClick={onReset}
+          className="text-[12px] font-medium text-[#6b7280] hover:text-foreground transition-colors"
+        >
+          I-reset
+        </button>
       </div>
-      <Select value={commodity} onValueChange={onCommodityChange}>
-        <SelectTrigger className="w-[160px] min-h-[52px] text-base">
-          <SelectValue placeholder={t("commodity")} />
-        </SelectTrigger>
-        <SelectContent className="text-base">
-          <SelectItem value="all" className="min-h-[44px] text-base">{t("allCommodities")}</SelectItem>
-          {commodities.map((c) => (
-            <SelectItem key={c} value={c} className="min-h-[44px] text-base">{c}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <div className="flex gap-2 w-full">
-        {([
-          { value: "surplus", label: t("surplus"), cls: "bg-green-600 hover:bg-green-700 text-white border-green-700", ring: "ring-4 ring-green-300" },
-          { value: "deficit", label: t("deficit"), cls: "bg-red-600 hover:bg-red-700 text-white border-red-700", ring: "ring-4 ring-red-300" },
-          { value: "balanced", label: t("balanced"), cls: "bg-yellow-500 hover:bg-yellow-600 text-black border-yellow-600", ring: "ring-4 ring-yellow-300" },
-        ] as const).map((b) => {
-          const isActive = status === b.value;
-          return (
-            <button
-              key={b.value}
-              type="button"
-              onClick={() => onStatusChange(isActive ? "all" : b.value)}
-              className={`flex-1 min-h-[52px] px-2 rounded-md border text-base font-semibold transition-all ${b.cls} ${isActive ? b.ring : "opacity-80"}`}
-              aria-pressed={isActive}
-            >
-              {b.label}
-            </button>
-          );
-        })}
-      </div>
-      <Button variant="outline" className="min-h-[52px] text-base gap-2 px-4" onClick={onExportCsv}>
-        <Download className="h-5 w-5" />
-        {t("csv")}
-      </Button>
+
+      {/* Export CSV (List Mode Only) */}
+      {mode === "list" && onExportCsv && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onExportCsv}
+          className="h-8 text-[12px] gap-1.5 border-[#e5e7eb] hover:bg-gray-50"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export CSV
+        </Button>
+      )}
     </div>
   );
 };

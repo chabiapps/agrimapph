@@ -2,6 +2,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useLang } from "@/lib/i18n";
 import { CATEGORIES, CategoryKey, getCommodityIcon } from "@/lib/categories";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -10,10 +11,11 @@ interface Props {
   onCategoryChange: (v: CategoryKey | "all") => void;
   commodity: string;
   onCommodityChange: (v: string) => void;
-  status: string;
+  status: string[];
   onStatusChange: (v: string) => void;
   commodities: string[];
   onReset: () => void;
+  isMobile?: boolean;
 }
 
 const MapFilterSheet = ({
@@ -23,31 +25,38 @@ const MapFilterSheet = ({
   status, onStatusChange,
   commodities,
   onReset,
+  isMobile = true,
 }: Props) => {
   const { t } = useLang();
   const activeCount =
     (category !== "all" ? 1 : 0) +
     (commodity !== "all" ? 1 : 0) +
-    (status !== "all" ? 1 : 0);
+    (status.length > 0 ? 1 : 0);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetTrigger asChild>
-        <button
-          type="button"
-          aria-label="Filters"
-          className="absolute top-[64px] right-4 z-[500] h-12 w-12 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent transition-colors"
-        >
-          <SlidersHorizontal className="h-5 w-5" />
-          {activeCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-card" aria-label="Filters active" />
-          )}
-        </button>
-      </SheetTrigger>
+      {isMobile && (
+        <SheetTrigger asChild>
+          <button
+            type="button"
+            aria-label="Filters"
+            className="absolute top-[64px] right-4 z-[500] h-12 w-12 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent transition-colors"
+          >
+            <SlidersHorizontal className="h-5 w-5" />
+            {activeCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-card" aria-label="Filters active" />
+            )}
+          </button>
+        </SheetTrigger>
+      )}
       <SheetContent
-        side="bottom"
-        className="rounded-t-2xl !bottom-[72px] z-[1100] max-h-[70vh] overflow-y-auto"
-        style={{ zIndex: 1100 }}
+        side={isMobile ? "bottom" : "left"}
+        className={cn(
+          "z-[1100] overflow-y-auto",
+          isMobile && "rounded-t-2xl !bottom-[72px] max-h-[70vh]",
+          !isMobile && "w-[280px]"
+        )}
+        style={isMobile ? { zIndex: 1100 } : {}}
         onPointerDownOutside={(e) => {
           const target = e.target as HTMLElement | null;
           if (target?.closest("[data-radix-popper-content-wrapper],[data-radix-select-content],[data-radix-select-viewport]")) {
@@ -145,12 +154,12 @@ const MapFilterSheet = ({
                 { value: "deficit", label: `${t("deficit")}`, cls: "bg-red-600 hover:bg-red-700 text-white border-red-700", ring: "ring-4 ring-red-300" },
                 { value: "balanced", label: `${t("balanced")}`, cls: "bg-yellow-500 hover:bg-yellow-600 text-black border-yellow-600", ring: "ring-4 ring-yellow-300" },
               ] as const).map((b) => {
-                const isActive = status === b.value;
+                const isActive = status.includes(b.value);
                 return (
                   <button
                     key={b.value}
                     type="button"
-                    onClick={() => onStatusChange(isActive ? "all" : b.value)}
+                    onClick={() => onStatusChange(b.value)}
                     className={`flex-1 min-h-[56px] px-2 rounded-md border text-base font-semibold transition-all ${b.cls} ${isActive ? b.ring : "opacity-80"}`}
                     aria-pressed={isActive}
                   >

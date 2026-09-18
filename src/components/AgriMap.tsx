@@ -177,7 +177,7 @@ const AgriMap = ({ reports, onPinClick, onClusterClick, mode = "current_supply",
   return (
     <div className="relative h-full w-full">
       <div ref={mapRef} className="h-full w-full" />
-      <div className="absolute left-3 bottom-[84px] z-[500] bg-card/95 backdrop-blur border border-border rounded-full shadow-lg px-2.5 py-1 text-[10px] leading-tight text-foreground pointer-events-none">
+      <div className="absolute left-3 bottom-4 z-[500] bg-card/95 backdrop-blur border border-border rounded-full shadow-lg px-2.5 py-1 text-[10px] leading-tight text-foreground pointer-events-none">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <span className="inline-block h-2 w-2 rounded-full bg-[#22c55e]" />

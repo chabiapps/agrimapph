@@ -1,0 +1,5 @@
+- [Project Overview](project-overview.md) — High-level overview of AgriMap PH project architecture and goals
+- [Database Schema](database-schema.md) — Detailed schema for the Supabase database
+- [UI Components](ui-components.md) — Inventory of key UI components in AgriMap PH
+- [Tech Stack](tech-stack.md) — Technical specifications and toolchain for AgriMap PH
+- [Session Context](session-context.md) — Current work-in-progress and focus for the active session

@@ -6,6 +6,24 @@ A mobile-first Progressive Web App (PWA) that crowdsources real-time agricultura
 
 Live app: https://agrimapph.lovable.app
 
+## 🚀 Getting Started
+
+### Local Development
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+2. **Environment Setup**:
+   Create a `.env` file in the root directory:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+3. **Run the app**:
+   ```bash
+   npm run dev
+   ```
+
 ## 🌟 The Problem
 
 The Philippines does not have a food supply problem — it has a food repositioning problem:

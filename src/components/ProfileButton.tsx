@@ -1,8 +1,13 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useProfile, userTypeMeta } from "@/lib/profile";
+import { cn } from "@/lib/utils";
 
-const ProfileButton = () => {
+interface Props {
+  inline?: boolean;
+}
+
+const ProfileButton = ({ inline = false }: Props) => {
   const { user } = useAuth();
   const { profile } = useProfile();
   if (!user) return null;
@@ -13,7 +18,10 @@ const ProfileButton = () => {
     <Link
       to="/settings/profile"
       aria-label="Aking profile"
-      className="fixed bottom-[84px] right-3 z-[1001] h-11 w-11 rounded-full bg-card/90 backdrop-blur-md border border-border shadow-md flex items-center justify-center hover:bg-accent transition-colors"
+      className={cn(
+        "h-11 w-11 rounded-full bg-card/90 backdrop-blur-md border border-border shadow-md flex items-center justify-center hover:bg-accent transition-colors",
+        !inline && "fixed bottom-[84px] right-3 z-[1001]"
+      )}
     >
       {profile?.user_type ? (
         <span className="text-xl leading-none">{meta.emoji}</span>

@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { useAuth } from "@/lib/AuthContext";
 import ReportFormPage from "@/components/ReportFormPage";
 import Onboarding from "@/pages/Onboarding";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 /**
  * Gate for the Mag-ulat tab: shows onboarding only when the logged-in user has
@@ -12,6 +14,7 @@ import Onboarding from "@/pages/Onboarding";
  */
 const ReportTabGate = ({ onSubmitted }: { onSubmitted: (recordType: string) => void }) => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
 
   const check = useCallback(async () => {
@@ -43,8 +46,16 @@ const ReportTabGate = ({ onSubmitted }: { onSubmitted: (recordType: string) => v
           I-edit ang Profile
         </Link>
       </div>
-      <div className="flex-1 min-h-0">
-        <ReportFormPage onSubmitted={onSubmitted} />
+      <div className={cn(
+        "flex-1 min-h-0 flex justify-center",
+        !isMobile && "py-8 bg-muted/30"
+      )}>
+        <div className={cn(
+          "w-full h-full",
+          !isMobile && "max-w-[640px] bg-card shadow-xl border border-border rounded-2xl my-4 overflow-hidden"
+        )}>
+          <ReportFormPage onSubmitted={onSubmitted} />
+        </div>
       </div>
     </div>
   );
