@@ -4,7 +4,11 @@ import type { Tab } from "@/lib/routes";
 import type { CategoryKey } from "@/lib/categories";
 
 interface DesktopLayoutProps {
-  tab: Tab;
+  /**
+   * Active nav tab. `null` when the shell hosts a non-tab page (e.g. Profile
+   * settings) — no nav item highlights in that case.
+   */
+  tab: Tab | null;
   category: CategoryKey | "all";
   onCategoryChange: (v: CategoryKey | "all") => void;
   onCommodityChange: (v: string) => void;

@@ -1,12 +1,18 @@
 import { Map, List, Plus } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/i18n";
 import { CATEGORIES, CategoryKey } from "@/lib/categories";
-import { tabHref, type Tab } from "@/lib/routes";
+import { tabFromPath, tabHref, type Tab } from "@/lib/routes";
 
 interface MapSidebarProps {
-  tab: Tab;
+  /**
+   * Active nav tab. `null` on non-tab pages (e.g. Profile) — nothing
+   * highlights. Category quick-filters on a non-tab page navigate to
+   * `/mapa?category=<key>` so they still land somewhere meaningful
+   * (Index seeds its filters from the URL on mount).
+   */
+  tab: Tab | null;
   category: CategoryKey | "all";
   onCategoryChange: (v: CategoryKey | "all") => void;
   onCommodityChange: (v: string) => void;
@@ -32,9 +38,20 @@ const NAV_LABELS: Record<Tab, { en: string; fil: string }> = {
  */
 const MapSidebar = ({ tab, category, onCategoryChange, onCommodityChange }: MapSidebarProps) => {
   const { lang } = useLang();
-  const { search } = useLocation();
+  const { pathname, search } = useLocation();
+  const navigate = useNavigate();
+  // The sidebar's live filter state only exists on tab pages (Mapa/Listahan/
+  // Mag-ulat all pass real state through DesktopLayout). On a non-tab page
+  // (Profile, tab === null) hand the click off to the map instead.
+  const hasLiveFilterState = tab !== null && tabFromPath(pathname) === tab;
 
   const handleCategoryClick = (key: CategoryKey) => {
+    if (!hasLiveFilterState) {
+      // No live filter state on this page — hand off to the map, which seeds
+      // its category filter from the query string on mount.
+      navigate(tabHref("map", `?category=${key}`));
+      return;
+    }
     // Toggle off when re-clicking the active category (mirrors MapFilterSheet);
     // reset commodity so a stale selection can't hide all pins (mirrors FilterBar).
     onCategoryChange(category === key ? "all" : key);
