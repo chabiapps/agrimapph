@@ -37,6 +37,11 @@ Primary table for all supply/demand reports.
 - `created_at`: Timestamp
 - `updated_at`: Timestamp
 
+> **No image/photo column (2026-09-22):** `agri_reports` has no `image_url`
+> (or equivalent). The pin-detail photo section therefore intentionally shows
+> a "no photo" placeholder. Adding image upload support (schema column +
+> Mag-ulat form field + Supabase Storage) is still outstanding.
+
 **Key Queries:**
 ```sql
 -- Get all current supply for map

@@ -1,43 +1,44 @@
-import { Map, List, Plus, BarChart3 } from "lucide-react";
+import { Map, List, Plus, BarChart3, type LucideIcon } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/i18n";
 import LanguageToggle from "./LanguageToggle";
 import ProfileButton from "./ProfileButton";
-import { Tab } from "./BottomNav";
+import { tabHref, type Tab } from "@/lib/routes";
 
 interface Props {
   tab: Tab;
-  onChange: (t: Tab) => void;
 }
 
-const items: { id: Tab; label: { en: string; fil: string }; Icon: any }[] = [
+const items: { id: Tab; label: { en: string; fil: string }; Icon: LucideIcon }[] = [
   { id: "map", label: { en: "Mapa", fil: "Mapa" }, Icon: Map },
   { id: "list", label: { en: "Listahan", fil: "Listahan" }, Icon: List },
   { id: "dashboard", label: { en: "Dashboard", fil: "Buod" }, Icon: BarChart3 },
   { id: "report", label: { en: "Mag-ulat", fil: "Mag-ulat" }, Icon: Plus },
 ];
 
-const TopNav = ({ tab, onChange }: Props) => {
+const TopNav = ({ tab }: Props) => {
   const { lang } = useLang();
+  const { search } = useLocation();
 
   return (
     <nav className="h-[64px] w-full bg-white border-b border-[#e5e7eb] flex items-center justify-between px-6 shrink-0 z-50 sticky top-0">
       {/* LEFT SIDE: Logo */}
-      <div className="flex items-center gap-2 cursor-pointer" onClick={() => onChange("map")}>
+      <Link to="/" className="flex items-center gap-2">
         <span className="text-xl">🌾</span>
         <span className="text-[#15803d] font-extrabold text-lg tracking-tight">
           AgriMap PH
         </span>
-      </div>
+      </Link>
 
       {/* CENTER: Navigation Links */}
       <div className="hidden md:flex items-center justify-center gap-8 h-full">
         {items.map(({ id, label, Icon }) => {
           const active = tab === id;
           return (
-            <button
+            <Link
               key={id}
-              onClick={() => onChange(id)}
+              to={tabHref(id, search)}
               className={cn(
                 "h-full flex items-center gap-2 px-1 text-[14px] font-semibold transition-colors relative",
                 active
@@ -51,7 +52,7 @@ const TopNav = ({ tab, onChange }: Props) => {
               {active && (
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#16a34a] rounded-t-full" />
               )}
-            </button>
+            </Link>
           );
         })}
       </div>

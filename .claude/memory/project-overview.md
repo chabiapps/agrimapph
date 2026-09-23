@@ -19,6 +19,13 @@ problem across 7,000+ islands.
 3. 📊 Dashboard — price trends, gaps, stats
 4. ➕ Mag-ulat — report submission form
 
+**Design system (2026-09-22):** Mapa, Listahan, Buod/Dashboard, and Mag-ulat
+are visually unified under a shared three-column shell + design tokens
+(primary green #16a34a, compact stat cards, Filipino status badges) — no
+longer the original default Lovable styling. Routing is URL-based (React
+Router) so the active page persists across refreshes. Mobile layouts are
+unchanged (bottom nav + bottom sheets).
+
 ## Supabase Tables
 
 ### agri_reports (main table)

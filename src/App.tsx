@@ -10,6 +10,7 @@ import PublicProfile from "./pages/PublicProfile.tsx";
 import ProfileSettings from "./pages/ProfileSettings.tsx";
 import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/AuthContext";
+import { TAB_ROUTE_PATHS } from "@/lib/routes";
 
 const queryClient = new QueryClient();
 
@@ -22,7 +23,15 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* Mapa at "/" (home) — every tab below shares the same component,
+                  which derives the active page from the pathname so a refresh
+                  (or a typed-in URL) lands on the right page. */}
               <Route path="/" element={<Index />} />
+              {TAB_ROUTE_PATHS.map((path) => (
+                <Route key={path} path={path} element={<Index />} />
+              ))}
+              {/* Alias kept so both spellings of the Buod page work. */}
+              <Route path="/dashboard" element={<Index />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/settings/profile" element={<ProfileSettings />} />
               <Route path="/profile/:userId" element={<PublicProfile />} />

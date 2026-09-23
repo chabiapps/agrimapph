@@ -14,8 +14,8 @@ const LanguageToggle = ({ inline = false }: Props) => {
       onClick={() => setLang(next)}
       aria-label={`Switch to ${next === "en" ? "English" : "Filipino"}`}
       className={cn(
-        "h-10 w-10 rounded-full bg-card/90 backdrop-blur-md border border-border shadow-md flex items-center justify-center text-foreground hover:bg-accent transition-colors",
-        !inline && "fixed top-3 right-3 z-[1001]"
+        "rounded-full bg-card/90 backdrop-blur-md border border-border shadow-md flex items-center justify-center text-foreground hover:bg-accent transition-colors relative shrink-0",
+        inline ? "h-8 w-8" : "h-10 w-10 fixed top-3 right-3 z-[1001]"
       )}
     >
       <Languages className="h-4 w-4" />
