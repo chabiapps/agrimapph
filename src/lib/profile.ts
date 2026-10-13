@@ -133,3 +133,74 @@ export const fetchCommodities = async (): Promise<Commodity[]> => {
   const { data } = await db.from("commodities").select("id, name, category, emoji, unit").order("name");
   return (data as Commodity[]) ?? [];
 };
+
+/**
+ * Reads the signed-in user's OWN role + assigned area from `user_profiles`
+ * (self read — allowed). Drives admin gating and the area-scoped data-entry
+ * page. `role`, `assigned_region`, `assigned_province`, `assigned_municipality`
+ * are not in the generated types, so this uses the loosely-typed `db` handle.
+ *
+ * Area semantics (see database-schema.md):
+ *  - super_admin → assigned_region is null → manages everywhere.
+ *  - admin       → assigned_region set; a null province/municipality broadens
+ *                  coverage; a null region means "manages nothing".
+ */
+export interface AdminAccess {
+  loading: boolean;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
+  role: string | null;
+  assigned_region: string | null;
+  assigned_province: string | null;
+  assigned_municipality: string | null;
+}
+
+export const useAdminAccess = (): AdminAccess => {
+  const { user, loading: authLoading } = useAuth();
+  const [state, setState] = useState<Omit<AdminAccess, "loading">>({
+    isAdmin: false,
+    isSuperAdmin: false,
+    role: null,
+    assigned_region: null,
+    assigned_province: null,
+    assigned_municipality: null,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    let active = true;
+    db.from("user_profiles")
+      .select("role, assigned_region, assigned_province, assigned_municipality")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active) return;
+        const row = (data ?? {}) as {
+          role?: string | null;
+          assigned_region?: string | null;
+          assigned_province?: string | null;
+          assigned_municipality?: string | null;
+        };
+        const role = row.role ?? "user";
+        setState({
+          isAdmin: role === "admin" || role === "super_admin",
+          isSuperAdmin: role === "super_admin",
+          role,
+          assigned_region: row.assigned_region ?? null,
+          assigned_province: row.assigned_province ?? null,
+          assigned_municipality: row.assigned_municipality ?? null,
+        });
+        setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user, authLoading]);
+
+  return { ...state, loading: loading || authLoading };
+};

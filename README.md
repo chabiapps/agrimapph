@@ -166,7 +166,7 @@ Supabase (PostgreSQL). **Full, current details live in [`.claude/memory/database
 | Submit report (Mag-ulat) | ❌ | ✅ | ✅ | ✅ |
 | Add farmers and reports for others | ❌ | ❌ | ✅ (own area) | ✅ |
 | Mark reports verified | ❌ | ❌ | ✅ (own area) | ✅ |
-| Verify user contacts | ❌ | ❌ | ✅ (not yet limited to own area) | ✅ |
+| Verify user contacts | ❌ | ❌ | ✅ (own area) | ✅ |
 | Change roles and areas, read the audit log | ❌ | ❌ | ❌ | ✅ |
 
 ## 📖 Background

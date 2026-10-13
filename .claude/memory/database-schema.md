@@ -120,7 +120,8 @@ Filled by triggers on `farmers` and `agri_reports` only (profiles are not audite
 - SELECT: own row; admins for profiles whose farm location is inside their area; super admin all.
 - INSERT / UPDATE own row. A trigger blocks non-super-admins from changing `role`, `assigned_*`, `is_verifier`, `verifier_municipality`;
   verification fields can be changed only by an admin or by a verifier acting on someone else.
-- Also: policies "Admins verify contacts" and "Super admin update roles" (see known gaps).
+- **"Admins verify contacts" (UPDATE)**: authenticated users only, and requires `role` admin/super_admin **and** `can_manage_area(farm_region, farm_province, farm_municipality)` on the profile being updated. Area admins can verify only users whose farm region/province/municipality is inside their assigned area; a user with no farm location set can only be verified by the super admin. Super admin is unchanged (`can_manage_area` is always true).
+- Also: policy "Super admin update roles" still allows the super admin to update any profile.
 
 **`farmers`** — only the admin who manages the area and the farmer who claimed the record
 - SELECT / UPDATE: `can_manage_area(...)` or `claimed_by_user_id = auth.uid()`.
@@ -164,15 +165,13 @@ Search farmers (autocomplete) by municipality + barangay; row-level security alr
 
 ## 7. Known gaps (open items)
 
-1. **"Admins verify contacts" lets any admin update any profile nationwide** (no area limit, no column limit).
-   Scope it with `can_manage_area(farm_region, farm_province, farm_municipality)` before creating real LGU admin accounts.
-2. **`user_id` is never set**, so the "owner can update/delete own report" rules never match. Decide: set `user_id` on insert (trigger) and backfill from `reported_by`.
-3. **Reporter lookups must filter to UUID-shaped `reported_by` values** (section 1). Several location/profile components still need this.
-4. **Listahan "Nakapag-ulat" prints a raw UUID** for app-created reports; admin-entered pins show no reporter. Show `farmer_name` / resolve names through `public_profiles`.
-5. **Map and Listahan do not yet filter `listing_status = 'active'`.**
-6. **Test data exists** (test accounts; a dummy farmer `5a1f0000-0000-4000-8000-000000000001` and dummy report `5a1f0000-0000-4000-8000-0000000000a1`). Remove or reset before launch.
-7. **Repo migrations are out of date.** Add the SQL files from the 2026-10-13 database work (admin/farmers schema, profile privacy, contact privacy, view grants, reporter patch) to `supabase/migrations/` so the repo matches the live database.
-8. Realtime is not used anywhere. If it is added later, logged-out visitors will not receive base-table changes (anonymous reads go through the view).
+1. **`user_id` is never set**, so the "owner can update/delete own report" rules never match. Decide: set `user_id` on insert (trigger) and backfill from `reported_by`.
+2. **Reporter lookups must filter to UUID-shaped `reported_by` values** (section 1). Several location/profile components still need this.
+3. **Listahan "Nakapag-ulat" prints a raw UUID** for app-created reports; admin-entered pins show no reporter. Show `farmer_name` / resolve names through `public_profiles`.
+4. **Map and Listahan do not yet filter `listing_status = 'active'`.**
+5. **Test data exists** (test accounts; a dummy farmer `5a1f0000-0000-4000-8000-000000000001` and dummy report `5a1f0000-0000-4000-8000-0000000000a1`). Remove or reset before launch.
+6. **Repo migrations are out of date.** Add the SQL files from the 2026-10-13 database work (admin/farmers schema, profile privacy, contact privacy, view grants, reporter patch) to `supabase/migrations/` so the repo matches the live database.
+7. Realtime is not used anywhere. If it is added later, logged-out visitors will not receive base-table changes (anonymous reads go through the view).
 
 ---
 
@@ -186,4 +185,5 @@ Search farmers (autocomplete) by municipality + barangay; row-level security alr
 | 2026-10-13 | Removed anonymous read of `agri_reports` and `user_profiles` base tables (reads go through the views). |
 | 2026-10-13 | Security fixes: views limited to SELECT (they were writable by anonymous users); users can no longer set their own role/area/verification; self reports must be attributed to the submitter. |
 | 2026-10-13 | Admin-entered reports now leave `reported_by` empty (farmer name goes in `farmer_name`). |
+| 2026-10-13 | "Admins verify contacts" now limited to the admin's own area via `can_manage_area`; users without a farm location can only be verified by the super admin. |
 
