@@ -28,6 +28,8 @@ interface AgriReport {
   category?: string | null;
   phone_number?: string | null;
   messenger_username?: string | null;
+  has_phone?: boolean;
+  has_messenger?: boolean;
   reported_by?: string | null;
   created_at?: string | null;
 }
@@ -69,7 +71,7 @@ const relativeTime = (iso?: string | null) => {
 
 type SortDir = "asc" | "desc";
 
-const ReportsTable = ({ reports, onRowClick }: { reports: AgriReport[]; onRowClick?: (r: AgriReport) => void }) => {
+const ReportsTable = ({ reports, onRowClick, onLogin }: { reports: AgriReport[]; onRowClick?: (r: AgriReport) => void; onLogin?: () => void }) => {
   const { t } = useLang();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -282,7 +284,7 @@ const ReportsTable = ({ reports, onRowClick }: { reports: AgriReport[]; onRowCli
             <TableCell>{r.municipality ?? "—"}</TableCell>
             <TableCell>{r.barangay ?? "—"}</TableCell>
             <TableCell>{r.season ?? "—"}</TableCell>
-            <TableCell onClick={(e) => e.stopPropagation()}><ContactIcons report={r} /></TableCell>
+            <TableCell onClick={(e) => e.stopPropagation()}><ContactIcons report={r} onLogin={onLogin} /></TableCell>
             <TableCell className="max-w-[160px] truncate">{r.reported_by ?? "—"}</TableCell>
             <TableCell className="text-muted-foreground">{relativeTime(r.created_at)}</TableCell>
             <TableCell>

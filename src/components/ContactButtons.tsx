@@ -1,4 +1,6 @@
 interface ContactInfo {
+  has_phone?: boolean;
+  has_messenger?: boolean;
   phone_number?: string | null;
   messenger_username?: string | null;
 }
@@ -8,18 +10,41 @@ const clean = (v?: string | null) => {
   return s.length > 0 ? s : null;
 };
 
-export const hasContact = (r: ContactInfo) => !!(clean(r.phone_number) || clean(r.messenger_username));
+/** True when a contact method is actually filled in, OR when the reporter
+ * declared it but left it blank (logged-out user). */
+export const hasContact = (r: ContactInfo) =>
+  !!(
+    clean(r.phone_number) ||
+    clean(r.messenger_username) ||
+    r.has_phone ||
+    r.has_messenger
+  );
 
 /** Full-size contact buttons for the pin detail sheet. */
-export const ContactButtons = ({ report }: { report: ContactInfo }) => {
+export const ContactButtons = ({
+  report,
+  onLogin,
+}: {
+  report: ContactInfo;
+  onLogin?: () => void;
+}) => {
   const phone = clean(report.phone_number);
   const messenger = clean(report.messenger_username);
-  if (!phone && !messenger) return <p className="text-sm text-muted-foreground">—</p>;
+
+  // Logged-out reporters may still have told us they have a phone/messenger
+  // while the actual value is blank. In that case show a "Mag-login para
+  // makita ang contact" button instead of a dead contact link.
+  const needsPhoneLogin = report.has_phone === true && !phone;
+  const needsMessengerLogin = report.has_messenger === true && !messenger;
+
+  if (!phone && !messenger && !needsPhoneLogin && !needsMessengerLogin) {
+    return <p className="text-sm text-muted-foreground">—</p>;
+  }
 
   return (
     <div className="flex w-full flex-col gap-2">
       <div className="flex w-full gap-2">
-        {phone && (
+        {!needsPhoneLogin && phone && (
           <a
             href={`tel:${phone}`}
             aria-label="Tumawag sa reporter"
@@ -28,7 +53,16 @@ export const ContactButtons = ({ report }: { report: ContactInfo }) => {
             <span aria-hidden>📞</span> Tumawag
           </a>
         )}
-        {messenger && (
+        {needsPhoneLogin && (
+          <button
+            type="button"
+            onClick={onLogin}
+            className="inline-flex h-12 min-h-[48px] flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 text-base font-bold text-foreground transition-colors hover:bg-accent"
+          >
+            <span aria-hidden>📞</span> Mag-login para makita ang contact
+          </button>
+        )}
+        {!needsMessengerLogin && messenger && (
           <a
             href={`https://m.me/${messenger}`}
             target="_blank"
@@ -39,6 +73,15 @@ export const ContactButtons = ({ report }: { report: ContactInfo }) => {
             <span aria-hidden>💬</span> Messenger
           </a>
         )}
+        {needsMessengerLogin && (
+          <button
+            type="button"
+            onClick={onLogin}
+            className="inline-flex h-12 min-h-[48px] flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 text-base font-bold text-foreground transition-colors hover:bg-accent"
+          >
+            <span aria-hidden>💬</span> Mag-login para makita ang contact
+          </button>
+        )}
       </div>
       <p className="text-xs text-muted-foreground">
         Contact info voluntarily shared by reporter.
@@ -48,14 +91,26 @@ export const ContactButtons = ({ report }: { report: ContactInfo }) => {
 };
 
 /** Compact icon-only contact actions for the table. */
-export const ContactIcons = ({ report }: { report: ContactInfo }) => {
+export const ContactIcons = ({
+  report,
+  onLogin,
+}: {
+  report: ContactInfo;
+  onLogin?: () => void;
+}) => {
   const phone = clean(report.phone_number);
   const messenger = clean(report.messenger_username);
-  if (!phone && !messenger) return <span className="text-muted-foreground">—</span>;
+
+  const needsPhoneLogin = report.has_phone === true && !phone;
+  const needsMessengerLogin = report.has_messenger === true && !messenger;
+
+  if (!phone && !messenger && !needsPhoneLogin && !needsMessengerLogin) {
+    return <span className="text-muted-foreground">—</span>;
+  }
 
   return (
     <span className="flex items-center gap-2">
-      {phone && (
+      {!needsPhoneLogin && phone && (
         <a
           href={`tel:${phone}`}
           aria-label="Tumawag sa reporter"
@@ -65,7 +120,17 @@ export const ContactIcons = ({ report }: { report: ContactInfo }) => {
           <span aria-hidden>📞</span>
         </a>
       )}
-      {messenger && (
+      {needsPhoneLogin && (
+        <button
+          type="button"
+          onClick={onLogin}
+          title="Mag-login para makita ang contact"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white transition-colors hover:bg-accent"
+        >
+          <span aria-hidden>📞</span>
+        </button>
+      )}
+      {!needsMessengerLogin && messenger && (
         <a
           href={`https://m.me/${messenger}`}
           target="_blank"
@@ -76,6 +141,16 @@ export const ContactIcons = ({ report }: { report: ContactInfo }) => {
         >
           <span aria-hidden>💬</span>
         </a>
+      )}
+      {needsMessengerLogin && (
+        <button
+          type="button"
+          onClick={onLogin}
+          title="Mag-login para makita ang contact"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white transition-colors hover:bg-accent"
+        >
+          <span aria-hidden>💬</span>
+        </button>
       )}
     </span>
   );

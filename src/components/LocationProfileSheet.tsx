@@ -103,7 +103,7 @@ const LocationProfileSheet = ({ location, reports, onClose }: Props) => {
       return;
     }
     let active = true;
-    db.from("user_profiles")
+    db.from("public_profiles")
       .select("id, full_name, user_type, verification_tier, primary_commodity")
       .in("id", ids)
       .then(({ data }) => {

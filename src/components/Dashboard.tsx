@@ -61,7 +61,7 @@ const Dashboard = ({ setTab, setCommodity, setStatus, setMapMode, setSelected }:
     const fetchData = async () => {
       try {
         const { data } = await supabase
-          .from("agri_reports")
+          .from("agri_reports_public")
           .select("*")
           .order("created_at", { ascending: false });
         if (data) setRows((data as unknown as Row[]));

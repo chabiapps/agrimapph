@@ -126,11 +126,25 @@ AgriMap PH makes surplus and deficit visible in real time so traders, buyers, LG
 
 ## 🗄 Database Schema
 
-- **agri_reports** (main table — 31 columns)
-  - Key fields: `category`, `subcategory`, `region`, `province`, `municipality`, `barangay`, `lat`, `lng`, `volume`, `status`, `price`, `price_unit`, `season`, `record_type`, `planted_date`, `expected_harvest_date`, `growth_stage`, `expected_volume`, `phone_number`, `messenger_username`, `user_id`
-- **commodities** — 50 rows with emoji mapping per category
-- **ph_locations** — Philippine location reference table
-- Row Level Security: public SELECT, authenticated INSERT, owner-only UPDATE/DELETE
+Supabase (PostgreSQL). **Full, current details live in [`.claude/memory/database-schema.md`](.claude/memory/database-schema.md).**
+
+**Tables**
+- `agri_reports` — main table (supply, demand and planting reports). Admin-entered rows carry `source='admin'`, `farmer_id`, `entered_by` and a `listing_status` (`active` → `sold` → `archived`).
+- `user_profiles` — one row per account, with a `role` (`user` / `admin` / `super_admin`) and, for admins, an assigned area.
+- `farmers` — farmers entered by LGU admins (they may not have an account yet) and can later claim their record with a claim code.
+- `farmer_claim_codes`, `audit_log` — claim flow and change history (admin-only).
+- `commodities` — 50 rows with emoji and unit per category.
+- `ph_locations` — not used; the location lists live in the app code.
+
+**Views**
+- `agri_reports_public` — what the app reads for the map and table. Phone and Messenger values are hidden from logged-out visitors.
+- `public_profiles` — the only safe way to read another user's profile.
+- `admin_farmer_list` — admin screens only.
+
+**Row Level Security**
+- Logged-out visitors read through the views only; contact details need a login (RA 10173).
+- Admins can enter and edit farmers and reports only inside their assigned area; the super admin has no limit.
+- Users cannot change their own role, area or verification status.
 
 ## 👥 Who Is This For?
 
@@ -144,14 +158,16 @@ AgriMap PH makes surplus and deficit visible in real time so traders, buyers, LG
 
 ## 🔐 Access Levels
 
-| Action | Public | Logged In |
-|--------|--------|-----------|
-| View map (Mapa) | ✅ | ✅ |
-| Browse table (Listahan) | ✅ | ✅ |
-| Export CSV | ✅ | ✅ |
-| Submit report (Mag-ulat) | ❌ | ✅ |
-| Edit own report | ❌ | ✅ |
-| Delete own report | ❌ | ✅ |
+| Action | Public | Logged In | Admin (area) | Super Admin |
+|---|---|---|---|---|
+| View map (Mapa) and table (Listahan) | ✅ (contact hidden) | ✅ | ✅ | ✅ |
+| See phone / Messenger on a pin | ❌ ("Mag-login") | ✅ | ✅ | ✅ |
+| Export CSV | ✅ | ✅ | ✅ | ✅ |
+| Submit report (Mag-ulat) | ❌ | ✅ | ✅ | ✅ |
+| Add farmers and reports for others | ❌ | ❌ | ✅ (own area) | ✅ |
+| Mark reports verified | ❌ | ❌ | ✅ (own area) | ✅ |
+| Verify user contacts | ❌ | ❌ | ✅ (not yet limited to own area) | ✅ |
+| Change roles and areas, read the audit log | ❌ | ❌ | ❌ | ✅ |
 
 ## 📖 Background
 

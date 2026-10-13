@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
-import { UserProfile, fetchProfile, isProducer, tierMeta, userTypeMeta } from "@/lib/profile";
+import { PublicProfile, fetchPublicProfile, isProducer, tierMeta, userTypeMeta } from "@/lib/profile";
 import QrCodeCard from "@/components/QrCodeCard";
 import { Button } from "@/components/ui/button";
 import { getCommodityIcon } from "@/lib/categories";
@@ -17,7 +17,7 @@ interface RecentReport {
 
 const PublicProfile = () => {
   const { userId = "" } = useParams();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [count, setCount] = useState(0);
   const [recent, setRecent] = useState<RecentReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,9 +25,9 @@ const PublicProfile = () => {
   useEffect(() => {
     let active = true;
     (async () => {
-      const p = await fetchProfile(userId);
+      const p = await fetchPublicProfile(userId);
       const { data, count: c } = await supabase
-        .from("agri_reports")
+        .from("agri_reports_public")
         .select("subcategory, status, record_type, municipality, province, created_at", { count: "exact" })
         .eq("reported_by", userId)
         .order("created_at", { ascending: false })
@@ -62,7 +62,17 @@ const PublicProfile = () => {
     <div className="min-h-screen bg-background">
       <main className="max-w-lg mx-auto px-4 py-8 space-y-6">
         <section className="text-center space-y-3">
-          <div className="text-6xl">{meta.emoji}</div>
+          <div className="text-6xl">
+            {profile.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={profile.full_name ?? "AgriMap member"}
+                className="mx-auto h-24 w-24 rounded-full object-cover"
+              />
+            ) : (
+              meta.emoji
+            )}
+          </div>
           <h1 className="text-2xl font-extrabold">{profile.full_name ?? "AgriMap member"}</h1>
           <p className="text-base text-muted-foreground">{meta.label}</p>
           <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-base font-semibold ${tier.className}`}>
@@ -78,17 +88,30 @@ const PublicProfile = () => {
                 <span className="font-semibold">{getCommodityIcon(profile.primary_commodity)} {profile.primary_commodity}</span>
               </p>
             )}
-            {profile.farm_location && (
+            {(profile.farm_municipality || profile.farm_province) && (
               <p className="text-base">
                 <span className="text-muted-foreground">Lokasyon: </span>
-                <span className="font-semibold">{profile.farm_location}</span>
+                <span className="font-semibold">
+                  {[profile.farm_municipality, profile.farm_province].filter(Boolean).join(", ")}
+                </span>
               </p>
             )}
-            {profile.land_area && (
-              <p className="text-base"><span className="text-muted-foreground">Laki ng lupa: </span><span className="font-semibold">{profile.land_area}</span></p>
+          </section>
+        )}
+
+        {/* Public-safe verification flags only (booleans) — never the raw phone
+            number or Messenger username, which stay private on user_profiles. */}
+        {(profile.phone_verified || profile.messenger_verified) && (
+          <section className="flex flex-wrap justify-center gap-2">
+            {profile.phone_verified && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-sm font-semibold text-green-700">
+                ✓ Beripikadong telepono
+              </span>
             )}
-            {profile.vessel_type && (
-              <p className="text-base"><span className="text-muted-foreground">Vessel: </span><span className="font-semibold">{profile.vessel_type}</span></p>
+            {profile.messenger_verified && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-sm font-semibold text-green-700">
+                ✓ Beripikadong Messenger
+              </span>
             )}
           </section>
         )}

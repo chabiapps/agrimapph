@@ -15,6 +15,7 @@ import DesktopLayout from "@/components/DesktopLayout";
 import MapRightPanel from "@/components/MapRightPanel";
 import MapFilterSheet from "@/components/MapFilterSheet";
 import AuthGate from "@/components/AuthGate";
+import AuthModal from "@/components/AuthModal";
 import ProfileButton from "@/components/ProfileButton";
 import ReportTabGate from "@/components/ReportTabGate";
 import ReportRightPanel from "@/components/ReportRightPanel";
@@ -49,6 +50,8 @@ interface AgriReport {
   subcategory: string | null;
   phone_number?: string | null;
   messenger_username?: string | null;
+  has_phone?: boolean;
+  has_messenger?: boolean;
   reported_by?: string | null;
   created_at?: string | null;
 }
@@ -140,6 +143,8 @@ const Index = () => {
   // Signup leaves a placeholder profile row with no user_type — such users must
   // finish onboarding before using the app. Returning users pass straight through.
   const { user, loading: authLoading } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+  const handleLogin = useCallback(() => { if (!user) setAuthOpen(true); }, [user]);
   useEffect(() => {
     if (authLoading || !user) return;
     let active = true;
@@ -160,8 +165,8 @@ const Index = () => {
       "id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory, reported_by, created_at";
 
     let { data, error, status, statusText } = (await supabase
-      .from("agri_reports")
-      .select(`${BASE_COLS}, phone_number, messenger_username`)) as {
+      .from("agri_reports_public")
+      .select(`${BASE_COLS}, phone_number, messenger_username, has_phone, has_messenger`)) as {
       data: Record<string, unknown>[] | null;
       error: { message: string } | null;
       status: number;
@@ -171,7 +176,7 @@ const Index = () => {
     if (error) {
       // Contact columns may not exist yet — fall back to the base column set.
       ({ data, error, status, statusText } = (await supabase
-        .from("agri_reports")
+        .from("agri_reports_public")
         .select(BASE_COLS)) as unknown as {
         data: Record<string, unknown>[] | null;
         error: { message: string } | null;
@@ -203,7 +208,7 @@ const Index = () => {
   // Verification tiers for pin badges (community / government verified reporters).
   useEffect(() => {
     let active = true;
-    db.from("user_profiles")
+    db.from("public_profiles")
       .select("id, verification_tier")
       .in("verification_tier", ["community", "government"])
       .then(({ data }) => {
@@ -221,7 +226,7 @@ const Index = () => {
   const [dbCommodities, setDbCommodities] = useState<string[]>([]);
   useEffect(() => {
     let active = true;
-    let q = db.from("agri_reports").select("subcategory").not("subcategory", "is", null);
+    let q = db.from("agri_reports_public").select("subcategory").not("subcategory", "is", null);
     if (category !== "all") q = q.eq("category", category);
     q.then(({ data }) => {
       if (!active || !data) return;
@@ -282,8 +287,8 @@ const Index = () => {
       setSelected(found);
       return;
     }
-    db.from("agri_reports")
-      .select("id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory, reported_by, created_at, phone_number, messenger_username")
+    db.from("agri_reports_public")
+      .select("id, lat, lng, status, region, province, municipality, barangay, price, volume, season, record_type, planted_date, expected_harvest_date, expected_volume, growth_stage, category, subcategory, reported_by, created_at, phone_number, messenger_username, has_phone, has_messenger")
       .eq("id", reportId)
       .maybeSingle()
       .then(({ data }) => {
@@ -439,7 +444,7 @@ const Index = () => {
       {/* min-w-0 keeps this column shrinkable so the wide table scrolls
           inside ReportsTable instead of inflating the page. */}
       <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-        <ReportsTable reports={filtered} />
+        <ReportsTable reports={filtered} onLogin={handleLogin} />
       </div>
     </>
   );
@@ -698,9 +703,11 @@ const Index = () => {
           isMobile={isMobile}
           report={selected}
           onClose={() => setSelected(null)}
+          onLogin={handleLogin}
         />
         {isMobile && <ProfileButton />}
         {isMobile && <BottomNav tab={tab} />}
+        <AuthModal open={authOpen} onOpenChange={setAuthOpen} initialMode="login" />
       </div>
     </div>
   );

@@ -78,7 +78,7 @@ export const LocationProfile = ({ location, isOpen, onClose }: LocationProfilePr
       setLoading(true);
       try {
         const { data: reportsData, error: reportsError } = await supabase
-          .from("agri_reports")
+          .from("agri_reports_public")
           .select("status, created_at, subcategory, category, price, price_unit, volume, record_type, expected_harvest_date, growth_stage, expected_volume, user_id")
           .eq("barangay", location.barangay)
           .eq("municipality", location.municipality)
@@ -110,7 +110,7 @@ export const LocationProfile = ({ location, isOpen, onClose }: LocationProfilePr
           const userIds = [...new Set(reportsData.map(r => r.user_id).filter(Boolean))] as string[];
           if (userIds.length > 0) {
             const { data: profilesData, error: profilesError } = await supabase
-              .from("user_profiles")
+              .from("public_profiles")
               .select("id, full_name, user_type, verification_tier")
               .in("id", userIds);
 

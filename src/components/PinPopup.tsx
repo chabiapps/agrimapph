@@ -34,6 +34,8 @@ export interface PinReport {
   category?: string | null;
   phone_number?: string | null;
   messenger_username?: string | null;
+  has_phone?: boolean;
+  has_messenger?: boolean;
   reported_by?: string | null;
   notes?: string | null;
   description?: string | null;
@@ -52,6 +54,7 @@ interface Props {
   report: PinReport | null;
   onClose: () => void;
   isMobile?: boolean;
+  onLogin?: () => void;
 }
 
 const formatDate = (iso?: string | null) => {
@@ -144,7 +147,7 @@ const PhotoArea = ({ photos, commodity }: { photos: string[]; commodity: string 
 };
 
 /** The panel body: left = identity/contact/notes, right = photo + extra info. */
-const PinDetail = ({ report }: { report: PinReport }) => {
+const PinDetail = ({ report, onLogin }: { report: PinReport; onLogin?: () => void }) => {
   const { t, lang } = useLang();
 
   const isPlanting = report.record_type === "planting_intention";
@@ -249,7 +252,7 @@ const PinDetail = ({ report }: { report: PinReport }) => {
             when that method was provided. */}
         {hasContact(report) && (
           <div className="rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-2.5">
-            <ContactButtons report={report} />
+            <ContactButtons report={report} onLogin={onLogin} />
           </div>
         )}
 
@@ -326,7 +329,7 @@ const PinDetail = ({ report }: { report: PinReport }) => {
  *
  * Mobile: keeps the existing bottom Sheet (unchanged behaviour).
  */
-const PinPopup = ({ report, onClose, isMobile = true }: Props) => {
+const PinPopup = ({ report, onClose, isMobile = true, onLogin }: Props) => {
   const { t } = useLang();
   const open = !!report;
 
@@ -339,7 +342,7 @@ const PinPopup = ({ report, onClose, isMobile = true }: Props) => {
           style={{ zIndex: 1100 }}
         >
           <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-muted-foreground/30" aria-hidden />
-          {report && <PinDetail report={report} />}
+          {report && <PinDetail report={report} onLogin={onLogin} />}
         </SheetContent>
       </Sheet>
     );
@@ -363,7 +366,7 @@ const PinPopup = ({ report, onClose, isMobile = true }: Props) => {
             <X className="h-4 w-4" />
           </button>
         </DialogHeader>
-        <div className="px-5 py-4">{report && <PinDetail report={report} />}</div>
+        <div className="px-5 py-4">{report && <PinDetail report={report} onLogin={onLogin} />}</div>
       </DialogContent>
     </Dialog>
   );

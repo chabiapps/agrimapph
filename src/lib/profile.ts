@@ -61,9 +61,40 @@ export const PROFILE_COLS =
 export const isProfileComplete = (p: UserProfile | null) =>
   !!p && !!p.full_name && !!p.user_type;
 
+/**
+ * Only these columns are exposed by the `public_profiles` view. Selecting any
+ * other column (e.g. the private PII in `PROFILE_COLS`) makes PostgREST return
+ * error 42703 (column does not exist) and the profile silently fails to load.
+ * `phone_verified` / `messenger_verified` are booleans only — never the raw
+ * phone number or Messenger username, which stay private on `user_profiles`.
+ */
+export const PUBLIC_PROFILE_COLS =
+  "id, full_name, avatar_url, user_type, verification_tier, phone_verified, messenger_verified, primary_commodity, farm_province, farm_municipality";
+
+export interface PublicProfile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  user_type: string | null;
+  verification_tier: string | null;
+  phone_verified: boolean | null;
+  messenger_verified: boolean | null;
+  primary_commodity: string | null;
+  farm_province: string | null;
+  farm_municipality: string | null;
+}
+
 export const fetchProfile = async (id: string): Promise<UserProfile | null> => {
   const { data } = await db.from("user_profiles").select(PROFILE_COLS).eq("id", id).maybeSingle();
   return (data as UserProfile | null) ?? null;
+};
+
+/** Read another user's profile via the `public_profiles` view (RLS-safe, no
+ *  private contact/PII columns). Use for any profile that is not the signed-in
+ *  user's own; self reads stay on `user_profiles` via `fetchProfile`. */
+export const fetchPublicProfile = async (id: string): Promise<PublicProfile | null> => {
+  const { data } = await db.from("public_profiles").select(PUBLIC_PROFILE_COLS).eq("id", id).maybeSingle();
+  return (data as PublicProfile | null) ?? null;
 };
 
 export const useProfile = () => {

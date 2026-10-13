@@ -105,7 +105,7 @@ const MapRightPanel = ({
   // lightest-column approach as the Buod Dashboard's own query.
   useEffect(() => {
     let active = true;
-    db.from("agri_reports")
+    db.from("agri_reports_public")
       .select("id, subcategory, category, status, region, province, municipality, barangay, created_at")
       .order("created_at", { ascending: false })
       .limit(200)
