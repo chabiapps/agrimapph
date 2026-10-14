@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { z } from "zod";
+import { reportSchema, type RecordType } from "@/lib/reportSchema";
 import { ChevronDown, Send } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -18,6 +18,7 @@ import { CATEGORIES, CategoryKey, getCommodityIcon, getPriceMeta, PRICE_UNITS, P
 import LocationDropdowns, { LocationValue } from "@/components/LocationDropdowns";
 import MapPreview from "@/components/MapPreview";
 import { geocodeMunicipality, getProvinceCenter } from "@/lib/geoCoords";
+import { STAGE_BY_CATEGORY, DATE_LABELS } from "@/lib/formOptions";
 
 interface Props {
   onSubmitted?: (recordType?: "current_supply" | "planting_intention") => void;
@@ -28,99 +29,14 @@ interface Props {
   onProgress?: (steps: ProgressStep[]) => void;
 }
 
-type RecordType = "current_supply" | "planting_intention";
+// Report validation now lives in @/lib/reportSchema (shared with the admin
+// data-entry grid). reportSchema and RecordType are imported above so the
+// Mag-ulat form behaves exactly as before.
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
-const nonEmpty = (label: string) => z.string().trim().min(1, { message: `${label} ay kailangan` }).max(100);
-
-const VOLUME_VALUES = ["Napakataas", "Mataas", "Katamtaman", "Mababa"] as const;
-
-/**
- * Unified report schema. Validates the whole form object BEFORE any Supabase
- * INSERT so incomplete data can never reach the database (prevents errors
- * like "null value in column volume").
- */
-const baseReportSchema = z.object({
-  record_type: z.enum(["current_supply", "planting_intention"]),
-  category: nonEmpty("Kategorya"),
-  commodity: nonEmpty("Produkto"),
-  volume_level: z.enum(VOLUME_VALUES, { message: "Piliin ang dami ng produkto" }),
-  status: z.enum(["surplus", "deficit", "balanced"], { message: "Piliin ang kalagayan" }),
-  price: z.string().trim(),
-  region: nonEmpty("Rehiyon"),
-  province: nonEmpty("Lalawigan"),
-  municipality: nonEmpty("Bayan"),
-  barangay: nonEmpty("Barangay"),
-  lat: z.coerce.number({ message: "Ilagay ang latitude" }).min(-90, "Hindi wastong latitude").max(90, "Hindi wastong latitude"),
-  lng: z.coerce.number({ message: "Ilagay ang longitude" }).min(-180, "Hindi wastong longitude").max(180, "Hindi wastong longitude"),
-  planted_date: z.string().trim(),
-  expected_harvest_date: z.string().trim(),
-  notes: z.string().trim().max(500).optional().or(z.literal("")),
-});
-
-const reportSchema = baseReportSchema.superRefine((v, ctx) => {
-  if (v.record_type === "current_supply") {
-    const n = Number(v.price);
-    if (v.price === "" || Number.isNaN(n) || n <= 0 || n > 100000) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["price"], message: "Ilagay ang tamang presyo (higit sa 0)" });
-    }
-  }
-  if (v.record_type === "planting_intention") {
-    if (!v.planted_date) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["planted_date"], message: "Piliin ang petsa ng pagtatanim" });
-    }
-    if (!v.expected_harvest_date) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["expected_harvest_date"], message: "Piliin ang inaasahang petsa ng ani" });
-    }
-  }
-});
 
 type FieldErrors = Record<string, string>;
-
-type StageOption = { value: string; label: string; icon: string };
-
-const STAGE_BY_CATEGORY: Record<string, StageOption[]> = {
-  crops: [
-    { value: "Planted", label: "Itinanim", icon: "🌱" },
-    { value: "Growing", label: "Lumalaki", icon: "🌿" },
-    { value: "Near Harvest", label: "Malapit nang Anihin", icon: "🌾" },
-  ],
-  fish: [
-    { value: "Newly Stocked", label: "Bagong Lagay", icon: "🐣" },
-    { value: "Growing", label: "Lumalaki", icon: "🐠" },
-    { value: "Near Harvest", label: "Handa nang Anihin", icon: "🐟" },
-  ],
-  poultry: [
-    { value: "Newly Placed", label: "Bagong Sisiw", icon: "🐣" },
-    { value: "Growing", label: "Lumalaki", icon: "🐥" },
-    { value: "Near Harvest", label: "Handa na", icon: "🐔" },
-  ],
-  livestock: [
-    { value: "Newly Acquired", label: "Bagong Bili", icon: "🐣" },
-    { value: "Growing", label: "Lumalaki", icon: "🐷" },
-    { value: "Near Harvest", label: "Handa nang Ibenta", icon: "🐖" },
-  ],
-  dairy: [
-    { value: "Newly Acquired", label: "Bagong Bili", icon: "🐣" },
-    { value: "Growing", label: "Lumalaki", icon: "🐄" },
-    { value: "Near Harvest", label: "Nagagatasan na", icon: "🥛" },
-  ],
-  other: [
-    { value: "Planted", label: "Itinanim", icon: "🌱" },
-    { value: "Growing", label: "Lumalaki", icon: "🌿" },
-    { value: "Near Harvest", label: "Handa na", icon: "✅" },
-  ],
-};
-
-const DATE_LABELS: Record<string, { start: string; end: string }> = {
-  crops: { start: "📅 Kailan mo ito itinanim?", end: "📅 Kailan mo aanihin?" },
-  fish: { start: "📅 Kailan mo sila inilagay sa tubig?", end: "📅 Inaasahang petsa ng huli" },
-  poultry: { start: "📅 Petsa ng paglalagay ng sisiw", end: "📅 Inaasahang petsa ng karne/itlog" },
-  livestock: { start: "📅 Petsa ng pagbili ng alagang hayop", end: "📅 Inaasahang petsa ng pagbenta" },
-  dairy: { start: "📅 Petsa ng pagbili", end: "📅 Inaasahang petsa" },
-  other: { start: "📅 Petsa ng simula", end: "📅 Inaasahang petsa ng ani" },
-};
 
 const VOLUME_OPTIONS = [
   { value: "Napakataas", label: "Napakataas", sub: "Very High" },

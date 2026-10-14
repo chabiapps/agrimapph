@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
 import PublicProfile from "./pages/PublicProfile.tsx";
+import AdminDataEntry from "./pages/AdminDataEntry.tsx";
 import ProfileSettings from "./pages/ProfileSettings.tsx";
 import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/AuthContext";
@@ -35,6 +36,8 @@ const App = () => (
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/settings/profile" element={<ProfileSettings />} />
               <Route path="/profile/:userId" element={<PublicProfile />} />
+              <Route path="/admin" element={<AdminDataEntry />} />
+
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
