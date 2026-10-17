@@ -12,7 +12,7 @@ import { Plus, Trash2, X, Copy, ArrowDownToLine } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { toast } from "@/hooks/use-toast";
 import { useAdminAccess } from "@/lib/profile";
-import { VOLUME_VALUES, reportSchema, type RecordType } from "@/lib/reportSchema";
+import { VOLUME_VALUES, type RecordType } from "@/lib/reportSchema";
 import {
   CATEGORIES,
   getCategoryDef,
@@ -21,7 +21,14 @@ import {
 } from "@/lib/categories";
 import { STAGE_BY_CATEGORY, DATE_LABELS } from "@/lib/formOptions";
 import { db } from "@/lib/db";
-import { geocodeMunicipality, getProvinceCenter } from "@/lib/geoCoords";
+import {
+  adminRowMunicipality,
+  adminRowState,
+  isAdminRowEmpty,
+  resolveAdminRowLatLng,
+  validateAdminRow,
+  type AdminRowErrors,
+} from "@/lib/validateAdminRow";
 import phLocations from "@/data/ph-locations.json";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -119,6 +126,9 @@ const EMPTY = "__empty__";
 
 const CELL_INPUT = "min-h-[48px] w-full text-base";
 const CELL_TRIGGER = "min-h-[48px] w-full text-base";
+// Invalid cells (aria-invalid set by invalidCell below) get a red outline.
+const INVALID_RING =
+  " aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-destructive/40";
 
 // Navigable columns in visual order (Unit, index 9, is read-only so it is
 // excluded). Used for Tab/Shift+Tab movement within a row.
@@ -758,28 +768,8 @@ const AdminDataEntry = () => {
     (lang === "fil" ? "Walang nakalaang lugar" : "No assigned area");
 
   // A row counts as empty when every data field is blank/unset; empty rows
-  // are ignored (never invalid). `status: "balanced"` and
-  // `record_type: "current_supply"` are the new-row defaults, so they only
-  // count as data when changed. Phone/Messenger count only when Contact OK
-  // is ticked.
-  const isRowEmpty = (row: Row): boolean =>
-    !row.farmer_name.trim() &&
-    !row.contact_ok &&
-    !(row.contact_ok && (row.phone.trim() || row.messenger.trim())) &&
-    !row.category &&
-    !row.commodity.trim() &&
-    (!row.status || row.status === "balanced") &&
-    !row.volume &&
-    row.price.trim() === "" &&
-    !row.season &&
-    row.record_type === "current_supply" &&
-    !row.municipality_override.trim() &&
-    !row.barangay.trim() &&
-    !row.notes.trim() &&
-    !row.planted_date &&
-    !row.expected_harvest_date &&
-    !row.growth_stage &&
-    !row.expected_volume.trim();
+  // are ignored (never invalid). See isAdminRowEmpty in lib/validateAdminRow.
+  const isRowEmpty = (row: Row): boolean => isAdminRowEmpty(row);
 
   // Async lat/lng cache so we never hammer Nominatim: keyed by
   // "municipality|province". Filled at validation time; never shown as columns.
@@ -799,9 +789,8 @@ const AdminDataEntry = () => {
     if (key in geoCache || geoPending.current.has(key) || !municipalityName || !provinceName)
       return;
     geoPending.current.add(key);
-    geocodeMunicipality(municipalityName, provinceName)
+    resolveAdminRowLatLng(municipalityName, provinceName)
       .then((coords) => {
-        if (!coords) coords = getProvinceCenter(provinceName);
         if (activeRef.current) setGeoCache((c) => ({ ...c, [key]: coords }));
       })
       .finally(() => {
@@ -810,11 +799,12 @@ const AdminDataEntry = () => {
   };
 
   // --- Live row validation (no saving) -------------------------------------
-  // validateRow maps a grid row to the shared reportSchema the same way the
-  // Mag-ulat form builds its candidate (ReportFormPage buildCandidate), then
-  // adds the admin-grid rules: Farmer name, Barangay, location bar set, and
-  // area membership. Returns per-field messages keyed by Row field name so
-  // the JSX can outline cells and show reasons on hover/tap.
+  // Logic lives in lib/validateAdminRow so the JSX edits stay small. Maps a
+  // grid row to the shared reportSchema the same way the Mag-ulat form builds
+  // its candidate (ReportFormPage buildCandidate), then adds the admin-grid
+  // rules: Farmer name, Barangay, location bar set, and area membership.
+  // Returns per-field messages keyed by Row field name so the JSX can outline
+  // cells and show reasons on hover/tap.
   type RowField =
     | "farmer_name"
     | "phone"
@@ -833,112 +823,48 @@ const AdminDataEntry = () => {
     | "location"
     | "area";
 
-  // zod path segment (e.g. "volume_level", "price") -> grid Row field.
-  const SCHEMA_PATH_TO_FIELD: Record<string, RowField> = {
-    category: "category",
-    commodity: "commodity",
-    volume_level: "volume",
-    status: "status",
-    price: "price",
-    region: "location",
-    province: "location",
-    municipality: "location",
-    barangay: "barangay",
-    lat: "location",
-    lng: "location",
-    planted_date: "planted_date",
-    expected_harvest_date: "expected_harvest_date",
-    notes: "notes",
-  };
-
   const validateRow = (row: Row): Partial<Record<RowField, string>> => {
     if (isRowEmpty(row)) return {};
-    const errors: Partial<Record<RowField, string>> = {};
-
-    const rowMuni = row.municipality_override.trim() || municipality;
-    const latLng = geoCache[`${rowMuni}|${province}`];
-    // Same candidate shape as the Mag-ulat form's buildCandidate. Volume maps
-    // grid `volume` -> schema `volume_level`; phone/messenger are contact
-    // metadata and never reach the schema (they count only when Contact OK is
-    // ticked, which is enforced by the paste/fill rules, not here).
-    const lat = latLng ? String(latLng[0]) : "0";
-    const lng = latLng ? String(latLng[1]) : "0";
-    const candidate = {
-      record_type: row.record_type,
-      category: row.category,
-      commodity: row.commodity,
-      volume_level: row.volume,
-      // Unknown pasted Status stays "" so validation flags it (never silently
-      // fall back to "balanced").
-      status: row.status,
-      price: row.price,
-      region,
-      province,
-      municipality: rowMuni,
-      barangay: row.barangay,
-      lat,
-      lng,
-      planted_date: row.planted_date,
-      expected_harvest_date: row.expected_harvest_date,
-      notes: row.notes,
-    };
-    const parsed = reportSchema.safeParse(candidate);
-    if (!parsed.success) {
-      for (const issue of parsed.error.issues) {
-        const seg = String(issue.path[0] ?? "");
-        const field = SCHEMA_PATH_TO_FIELD[seg];
-        if (field && !errors[field]) errors[field] = issue.message;
-      }
-    }
-
-    // Admin-grid extras (required regardless of schema outcome).
-    if (!row.farmer_name.trim()) {
-      errors.farmer_name =
-        lang === "fil" ? "Ilagay ang pangalan ng magsasaka" : "Enter the farmer name";
-    }
-    if (!row.barangay.trim() && !errors.barangay) {
-      errors.barangay = lang === "fil" ? "Barangay ay kailangan" : "Barangay is required";
-    }
-    if (!region || !province || !municipality) {
-      errors.location =
-        lang === "fil"
-          ? "Punan ang rehiyon, lalawigan at bayan sa itaas"
-          : "Set the region, province and municipality above";
-    }
-    // Area membership: the row's municipality must be inside the admin's area.
-    if (!isSuperAdmin && rowMuni) {
-      const inArea =
-        (!assigned_province || province === assigned_province) &&
-        (!assigned_municipality || rowMuni === assigned_municipality);
-      if (!inArea) {
-        errors.area =
-          lang === "fil"
-            ? "Ang bayan ay wala sa iyong sakop na lugar"
-            : "The municipality is outside your assigned area";
-      }
-    }
-    return errors;
+    const rowMuni = adminRowMunicipality(row, municipality);
+    const latLng = geoCache[`${rowMuni}|${province}`] ?? null;
+    return validateAdminRow({
+      row,
+      location: { region, province, municipality },
+      area: { isSuperAdmin, assigned_province, assigned_municipality },
+      lang,
+      latLng,
+    }) as Partial<Record<RowField, string>>;
   };
 
   // Per-row validation status, computed after validateRow. Empty rows are
   // "empty" (ignored, never invalid); the summary counts only non-empty rows.
-  const rowStatuses = useMemo(
+  type RowStatus = { state: "empty" | "valid" | "invalid"; errors: AdminRowErrors };
+  const rowStatuses: RowStatus[] = useMemo(
     () =>
       rows.map((row) => {
-        if (isRowEmpty(row)) return { state: "empty" as const, errors: {} };
+        const empty = isRowEmpty(row);
+        if (empty) return { state: "empty" as const, errors: {} };
         // Kick off geocoding at validation time (cached, province fallback).
-        requestGeo(row.municipality_override.trim() || municipality, province);
+        requestGeo(adminRowMunicipality(row, municipality), province);
         const errors = validateRow(row);
-        return {
-          state: (Object.keys(errors).length === 0 ? "valid" : "invalid") as "valid" | "invalid",
-          errors,
-        };
+        return { state: adminRowState(errors, false), errors };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rows, region, province, municipality, geoCache, lang, isSuperAdmin, assigned_province, assigned_municipality],
   );
   const readyCount = rowStatuses.filter((s) => s.state === "valid").length;
   const fixCount = rowStatuses.filter((s) => s.state === "invalid").length;
+
+  // Invalid-cell helper: red outline class + hover/tap reason for a cell.
+  // Returns props to spread onto the cell's control (Input/SelectTrigger).
+  // Handlers and data-row/data-col attributes are left untouched.
+  const invalidCell = (
+    errors: AdminRowErrors,
+    field: RowField,
+  ): { "aria-invalid": boolean; title?: string; "data-invalid"?: string } =>
+    errors[field]
+      ? { "aria-invalid": true, title: errors[field], "data-invalid": "true" }
+      : { "aria-invalid": false };
 
   if (loading) {
     return (
@@ -1169,6 +1095,7 @@ const AdminDataEntry = () => {
               onFocus={handleGridFocus}
             >
               {rows.map((row, rowIndex) => {
+                const rowErrs = rowStatuses[rowIndex]?.errors ?? {};
                 const meta = getPriceMeta(row.category, row.commodity);
                 const subcats = row.category
                   ? getCategoryDef(row.category as CategoryKey).subcategories
@@ -1184,40 +1111,44 @@ const AdminDataEntry = () => {
                   <div
                     key={row.id}
                     data-idx={rowIndex}
-                    className="relative rounded-md border bg-background p-2 pl-10 pt-14"
+                    className="relative flex gap-2 rounded-md border bg-background p-2 pt-14"
                   >
-                    {/* Status dot: green = ready, red = needs fixing (reasons in title), dashed = empty row */}
-                    {(() => {
-                      const st = rowStatuses[rowIndex];
-                      if (!st || st.state === "empty") {
+                    {/* Status dot slot: fixed-width flex slot, first child of
+                        the record card. Green = ready, red = needs fixing
+                        (reasons in title), dashed = empty row. */}
+                    <div className="flex w-6 shrink-0 items-start justify-center pt-1">
+                      {(() => {
+                        const st = rowStatuses[rowIndex];
+                        if (!st || st.state === "empty") {
+                          return (
+                            <div
+                              aria-hidden="true"
+                              className="h-4 w-4 rounded-full border border-dashed border-muted-foreground/40"
+                            />
+                          );
+                        }
+                        const reasons = Object.values(st.errors).join(" • ");
                         return (
                           <div
-                            aria-hidden="true"
-                            className="absolute left-3 top-3 h-4 w-4 rounded-full border border-dashed border-muted-foreground/40"
+                            role="img"
+                            aria-label={
+                              st.state === "valid"
+                                ? lang === "fil"
+                                  ? "Handa na"
+                                  : "Ready"
+                                : lang === "fil"
+                                  ? "Kailangang ayusin"
+                                  : "Needs fixing"
+                            }
+                            title={reasons || undefined}
+                            className={`h-4 w-4 rounded-full ${
+                              st.state === "valid" ? "bg-emerald-500" : "bg-destructive"
+                            }`}
                           />
                         );
-                      }
-                      const reasons = Object.values(st.errors).join(" • ");
-                      return (
-                        <div
-                          role="img"
-                          aria-label={
-                            st.state === "valid"
-                              ? lang === "fil"
-                                ? "Handa na"
-                                : "Ready"
-                              : lang === "fil"
-                                ? "Kailangang ayusin"
-                                : "Needs fixing"
-                          }
-                          title={reasons || undefined}
-                          className={`absolute left-3 top-3 h-4 w-4 rounded-full ${
-                            st.state === "valid" ? "bg-emerald-500" : "bg-destructive"
-                          }`}
-                        />
-                      );
-                    })()}
-                    <div className="grid grid-cols-12 items-end gap-2">
+                      })()}
+                    </div>
+                    <div className="grid min-w-0 flex-1 grid-cols-12 items-end gap-2">
                       {/* Farmer name — autocomplete over existing farmers.
                           Resolves the pick by id (never by name) so duplicate
                           names can't be confused. Disabled until a province is
@@ -1233,8 +1164,9 @@ const AdminDataEntry = () => {
                               type="button"
                               data-row={rowIndex} data-col={0}
                               disabled={!province}
-                              className="flex min-h-[48px] w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-left text-base disabled:cursor-not-allowed disabled:opacity-50"
-                              title={!province ? L.provinceHint : undefined}
+                              {...invalidCell(rowErrs, "farmer_name")}
+                              className={`flex min-h-[48px] w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-left text-base disabled:cursor-not-allowed disabled:opacity-50${rowErrs.farmer_name ? " border-destructive ring-2 ring-destructive/40" : ""}`}
+                              title={rowErrs.farmer_name ?? (!province ? L.provinceHint : undefined)}
                             >
                               <span className="truncate">
                                 {row.farmer_name || (
@@ -1395,7 +1327,8 @@ const AdminDataEntry = () => {
                         <span className="text-xs text-muted-foreground">{L.phone}</span>
                         <Input
                         data-row={rowIndex} data-col={2}
-                        className={CELL_INPUT}
+                        className={CELL_INPUT + INVALID_RING}
+                        {...invalidCell(rowErrs, "phone")}
                         placeholder="09xx…"
                         inputMode="tel"
                         disabled={!row.contact_ok}
@@ -1408,7 +1341,8 @@ const AdminDataEntry = () => {
                         <span className="text-xs text-muted-foreground">{L.messenger}</span>
                         <Input
                         data-row={rowIndex} data-col={3}
-                        className={CELL_INPUT}
+                        className={CELL_INPUT + INVALID_RING}
+                        {...invalidCell(rowErrs, "messenger")}
                         placeholder="username"
                         disabled={!row.contact_ok}
                         value={row.messenger}
@@ -1427,7 +1361,7 @@ const AdminDataEntry = () => {
                           })
                         }
                       >
-                        <SelectTrigger className={CELL_TRIGGER} data-row={rowIndex} data-col={4}>
+                        <SelectTrigger className={CELL_TRIGGER + INVALID_RING} data-row={rowIndex} data-col={4} {...invalidCell(rowErrs, "category")}>
                           <SelectValue placeholder={L.category} />
                         </SelectTrigger>
                         <SelectContent>
@@ -1445,7 +1379,8 @@ const AdminDataEntry = () => {
                         <span className="text-xs text-muted-foreground">{L.commodity}</span>
                         <Input
                           data-row={rowIndex} data-col={5}
-                          className={CELL_INPUT}
+                          className={CELL_INPUT + INVALID_RING}
+                          {...invalidCell(rowErrs, "commodity")}
                           list={`commodity-${row.id}`}
                           placeholder={L.commodity}
                           value={row.commodity}
@@ -1468,7 +1403,7 @@ const AdminDataEntry = () => {
                           })
                         }
                       >
-                        <SelectTrigger className={CELL_TRIGGER} data-row={rowIndex} data-col={6}>
+                        <SelectTrigger className={CELL_TRIGGER + INVALID_RING} data-row={rowIndex} data-col={6} {...invalidCell(rowErrs, "status")}>
                           <SelectValue placeholder={L.status} />
                         </SelectTrigger>
                         <SelectContent>
@@ -1490,7 +1425,7 @@ const AdminDataEntry = () => {
                           update(row.id, { volume: v === EMPTY ? "" : v })
                         }
                       >
-                        <SelectTrigger className={CELL_TRIGGER} data-row={rowIndex} data-col={7}>
+                        <SelectTrigger className={CELL_TRIGGER + INVALID_RING} data-row={rowIndex} data-col={7} {...invalidCell(rowErrs, "volume")}>
                           <SelectValue placeholder={L.volume} />
                         </SelectTrigger>
                         <SelectContent>
@@ -1508,7 +1443,8 @@ const AdminDataEntry = () => {
                         <span className="text-xs text-muted-foreground">{L.price}</span>
                       <Input
                         data-row={rowIndex} data-col={8}
-                        className={CELL_INPUT}
+                        className={CELL_INPUT + INVALID_RING}
+                        {...invalidCell(rowErrs, "price")}
                         type="number"
                         inputMode="decimal"
                         min={0}
@@ -1536,7 +1472,7 @@ const AdminDataEntry = () => {
                           update(row.id, { season: v === EMPTY ? "" : v })
                         }
                       >
-                        <SelectTrigger className={CELL_TRIGGER} data-row={rowIndex} data-col={10}>
+                        <SelectTrigger className={CELL_TRIGGER + INVALID_RING} data-row={rowIndex} data-col={10} {...invalidCell(rowErrs, "season")}>
                           <SelectValue placeholder={L.season} />
                         </SelectTrigger>
                         <SelectContent>
@@ -1558,7 +1494,7 @@ const AdminDataEntry = () => {
                           update(row.id, { record_type: v as RecordType })
                         }
                       >
-                        <SelectTrigger className={CELL_TRIGGER} data-row={rowIndex} data-col={11}>
+                        <SelectTrigger className={CELL_TRIGGER + INVALID_RING} data-row={rowIndex} data-col={11} {...invalidCell(rowErrs, "record_type")}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1575,7 +1511,8 @@ const AdminDataEntry = () => {
                         <span className="text-xs text-muted-foreground">{L.barangay}</span>
                       <Input
                         data-row={rowIndex} data-col={12}
-                        className={CELL_INPUT}
+                        className={CELL_INPUT + INVALID_RING}
+                        {...invalidCell(rowErrs, "barangay")}
                         placeholder={L.barangay}
                         value={row.barangay}
                         onChange={(e) => update(row.id, { barangay: e.target.value })}
@@ -1586,7 +1523,8 @@ const AdminDataEntry = () => {
                         <span className="text-xs text-muted-foreground">{L.notes}</span>
                       <Input
                         data-row={rowIndex} data-col={13}
-                        className={CELL_INPUT}
+                        className={CELL_INPUT + INVALID_RING}
+                        {...invalidCell(rowErrs, "notes")}
                         placeholder={L.notes}
                         value={row.notes}
                         onChange={(e) => update(row.id, { notes: e.target.value })}
@@ -1649,7 +1587,8 @@ const AdminDataEntry = () => {
                             {dateLabels.start} *
                           </span>
                           <Input
-                            className={CELL_INPUT}
+                            className={CELL_INPUT + INVALID_RING}
+                            {...invalidCell(rowErrs, "planted_date")}
                             type="date"
                             value={row.planted_date}
                             onChange={(e) =>
@@ -1662,7 +1601,8 @@ const AdminDataEntry = () => {
                             {dateLabels.end} *
                           </span>
                           <Input
-                            className={CELL_INPUT}
+                            className={CELL_INPUT + INVALID_RING}
+                            {...invalidCell(rowErrs, "expected_harvest_date")}
                             type="date"
                             value={row.expected_harvest_date}
                             onChange={(e) =>
