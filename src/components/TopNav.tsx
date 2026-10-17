@@ -1,7 +1,8 @@
-import { Map, List, Plus, BarChart3, type LucideIcon } from "lucide-react";
+import { Map, List, Plus, BarChart3, ShieldCheck, type LucideIcon } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/i18n";
+import { useAdminAccess } from "@/lib/profile";
 import LanguageToggle from "./LanguageToggle";
 import ProfileButton from "./ProfileButton";
 import { tabHref, type Tab } from "@/lib/routes";
@@ -18,8 +19,9 @@ const items: { id: Tab; label: { en: string; fil: string }; Icon: LucideIcon }[]
 ];
 
 const TopNav = ({ tab }: Props) => {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const { search } = useLocation();
+  const access = useAdminAccess();
 
   return (
     <nav className="h-[64px] w-full bg-white border-b border-[#e5e7eb] flex items-center justify-between px-6 shrink-0 z-50 sticky top-0">
@@ -59,6 +61,16 @@ const TopNav = ({ tab }: Props) => {
 
       {/* RIGHT SIDE: Actions */}
       <div className="flex items-center gap-3">
+        {access !== null && access.isAdmin && (
+          <Link
+            to="/admin"
+            className="flex items-center gap-1 rounded-full bg-[#f0fdf4] border border-[#86efac] px-2 py-1 text-[12px] font-semibold text-[#15803d] hover:bg-[#dcfce7] transition-colors min-h-[44px]"
+            aria-label="Admin"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            {lang === "fil" ? t("admin") : t("admin")}
+          </Link>
+        )}
         <LanguageToggle inline />
         <ProfileButton inline />
       </div>

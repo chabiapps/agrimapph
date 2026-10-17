@@ -1,7 +1,8 @@
-import { Map, List, Plus } from "lucide-react";
+import { Map, List, Plus, Rows3 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/i18n";
+import { useAdminAccess } from "@/lib/profile";
 import { CATEGORIES, CategoryKey } from "@/lib/categories";
 import { tabFromPath, tabHref, type Tab } from "@/lib/routes";
 
@@ -37,13 +38,15 @@ const NAV_LABELS: Record<Tab, { en: string; fil: string }> = {
  * (same filter state as the category dropdown), and a footer tagline.
  */
 const MapSidebar = ({ tab, category, onCategoryChange, onCommodityChange }: MapSidebarProps) => {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
+  const access = useAdminAccess();
   // The sidebar's live filter state only exists on tab pages (Mapa/Listahan/
   // Mag-ulat all pass real state through DesktopLayout). On a non-tab page
   // (Profile, tab === null) hand the click off to the map instead.
   const hasLiveFilterState = tab !== null && tabFromPath(pathname) === tab;
+  const isAdminRoute = pathname.split("?")[0].split("#")[0].replace(/\/+$/, "") === "/admin";
 
   const handleCategoryClick = (key: CategoryKey) => {
     if (!hasLiveFilterState) {
@@ -97,6 +100,26 @@ const MapSidebar = ({ tab, category, onCategoryChange, onCommodityChange }: MapS
             </Link>
           );
         })}
+        {access.isAdmin && (
+          <Link
+            to="/admin"
+            aria-current={isAdminRoute ? "page" : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold transition-colors text-left",
+              isAdminRoute
+                ? "bg-primary/10 text-[#16a34a]"
+                : "text-[#6b7280] hover:bg-gray-50 hover:text-[#111827]"
+            )}
+          >
+            <Rows3
+              className={cn(
+                "h-5 w-5",
+                isAdminRoute ? "text-[#16a34a]" : "text-[#6b7280]"
+              )}
+            />
+            {t("addMultiple")}
+          </Link>
+        )}
       </nav>
 
       <div className="mx-5 my-1 h-px bg-[#e5e7eb] shrink-0" />

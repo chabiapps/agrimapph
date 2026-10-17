@@ -8,7 +8,8 @@ import {
   type FocusEvent,
 } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Trash2, X, Copy, ArrowDownToLine } from "lucide-react";
+import { Plus, Trash2, X, Copy, ArrowDownToLine, Save } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 import { useLang } from "@/lib/i18n";
 import { toast } from "@/hooks/use-toast";
 import { useAdminAccess } from "@/lib/profile";
@@ -29,6 +30,7 @@ import {
   validateAdminRow,
   type AdminRowErrors,
 } from "@/lib/validateAdminRow";
+import { saveAdminRows } from "@/lib/saveAdminRows";
 import phLocations from "@/data/ph-locations.json";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -164,6 +166,7 @@ const PASTE_COLS = [0, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13];
  */
 const AdminDataEntry = () => {
   const { lang, t } = useLang();
+  const { user } = useAuth();
   const {
     loading,
     isAdmin,
@@ -855,6 +858,68 @@ const AdminDataEntry = () => {
   const readyCount = rowStatuses.filter((s) => s.state === "valid").length;
   const fixCount = rowStatuses.filter((s) => s.state === "invalid").length;
 
+  // --- Save all (first DB-writing step) ------------------------------------
+  // Only valid rows are saved; invalid rows stay in the grid. Successful rows
+  // are removed; failed rows stay highlighted with the error on hover.
+  const [saving, setSaving] = useState(false);
+  const [saveErrors, setSaveErrors] = useState<Record<string, string>>({});
+  const [confirmingSave, setConfirmingSave] = useState(false);
+
+  const refreshFarmers = async () => {
+    if (!province) {
+      setFarmers([]);
+      return;
+    }
+    setFarmersLoading(true);
+    const { data, error } = await db
+      .from("farmers")
+      .select(
+        "id, full_name, phone_number, messenger_username, province, municipality, barangay",
+      )
+      .eq("province", province);
+    setFarmersLoading(false);
+    if (!error && data) setFarmers(data as unknown as Farmer[]);
+  };
+
+  const doSaveAll = async () => {
+    if (saving || !user) return;
+    const validIdx = rowStatuses
+      .map((s, i) => (s.state === "valid" ? i : -1))
+      .filter((i) => i >= 0);
+    if (validIdx.length === 0) return;
+    setConfirmingSave(false);
+    setSaving(true);
+    try {
+      const validRows = validIdx.map((i) => rows[i]);
+      const { savedRowIds, failures } = await saveAdminRows(
+        validRows,
+        { region, province, municipality },
+        user.id,
+      );
+      const savedSet = new Set(savedRowIds);
+      const failMap: Record<string, string> = {};
+      for (const f of failures) failMap[f.rowId] = f.message;
+      setSaveErrors(failMap);
+      if (savedSet.size > 0) {
+        setRows((rs) => {
+          const next = rs.filter((r) => !savedSet.has(r.id));
+          return next.length === 0 ? [newRow()] : next;
+        });
+        await refreshFarmers();
+      }
+      const failedCount = failures.length;
+      toast({
+        title:
+          lang === "fil"
+            ? `${savedSet.size} na-save, ${failedCount} na-fail`
+            : `${savedSet.size} saved, ${failedCount} failed`,
+        variant: failedCount > 0 ? "destructive" : undefined,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Invalid-cell helper: red outline class + hover/tap reason for a cell.
   // Returns props to spread onto the cell's control (Input/SelectTrigger).
   // Handlers and data-row/data-col attributes are left untouched.
@@ -964,6 +1029,12 @@ const AdminDataEntry = () => {
         <h1 className="mb-1 text-2xl font-bold">
           {lang === "fil" ? "Admin · Pagpasok ng Datos" : "Admin · Data Entry"}
         </h1>
+        <Link
+          to="/"
+          className="mb-4 text-primary underline hover:text-primary/90 text-sm"
+        >
+          {lang === "fil" ? "Bumalik sa mapa" : "Back to map"}
+        </Link>
         <p className="mb-4 text-muted-foreground">
           {lang === "fil"
             ? "Isang hilera = isang report. Punan ang mga hanay; ang pag-save ay darating sa susunod na hakbang."
@@ -1079,6 +1150,22 @@ const AdminDataEntry = () => {
               <ArrowDownToLine className="h-4 w-4" />
               {lang === "fil" ? "Kopya pababa" : "Fill down"}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-[44px]"
+              disabled={readyCount === 0 || saving}
+              onClick={() => setConfirmingSave(true)}
+            >
+              <Save className="h-4 w-4" />
+              {saving
+                ? lang === "fil"
+                  ? "Nagse-save…"
+                  : "Saving…"
+                : lang === "fil"
+                  ? "I-save lahat"
+                  : "Save all"}
+            </Button>
             <Button onClick={addRow} className="min-h-[44px]">
               <Plus className="h-4 w-4" />
               {lang === "fil" ? "Magdagdag ng hilera" : "Add row"}
@@ -1096,6 +1183,8 @@ const AdminDataEntry = () => {
             >
               {rows.map((row, rowIndex) => {
                 const rowErrs = rowStatuses[rowIndex]?.errors ?? {};
+                // Save failures highlight the card with the message on hover.
+                const saveErr = saveErrors[row.id];
                 const meta = getPriceMeta(row.category, row.commodity);
                 const subcats = row.category
                   ? getCategoryDef(row.category as CategoryKey).subcategories
@@ -1111,7 +1200,8 @@ const AdminDataEntry = () => {
                   <div
                     key={row.id}
                     data-idx={rowIndex}
-                    className="relative flex gap-2 rounded-md border bg-background p-2 pt-14"
+                    title={saveErr}
+                    className={`relative flex gap-2 rounded-md border bg-background p-2 pt-14${saveErr ? " border-destructive ring-2 ring-destructive/40" : ""}`}
                   >
                     {/* Status dot slot: fixed-width flex slot, first child of
                         the record card. Green = ready, red = needs fixing
@@ -1119,6 +1209,19 @@ const AdminDataEntry = () => {
                     <div className="flex w-6 shrink-0 items-start justify-center pt-1">
                       {(() => {
                         const st = rowStatuses[rowIndex];
+                        // Save-failed rows show red even if validation passed.
+                        if (saveErr) {
+                          return (
+                            <div
+                              role="img"
+                              aria-label={
+                                lang === "fil" ? "Hindi na-save" : "Not saved"
+                              }
+                              title={saveErr}
+                              className="h-4 w-4 rounded-full bg-destructive"
+                            />
+                          );
+                        }
                         if (!st || st.state === "empty") {
                           return (
                             <div
@@ -1656,6 +1759,43 @@ const AdminDataEntry = () => {
             </div>
           </div>
         </div>
+
+        {/* Save-all confirm: "Save N reports? / I-save ang N na ulat?" */}
+        {confirmingSave && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label={lang === "fil" ? "Kumpirmahin ang pag-save" : "Confirm save"}
+          >
+            <div className="w-full max-w-sm rounded-lg border bg-card p-4 shadow-lg">
+              <p className="mb-4 text-base">
+                {lang === "fil"
+                  ? `I-save ang ${readyCount} na ulat?`
+                  : `Save ${readyCount} reports?`}
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="min-h-[44px]"
+                  disabled={saving}
+                  onClick={() => setConfirmingSave(false)}
+                >
+                  {lang === "fil" ? "Kanselahin" : "Cancel"}
+                </Button>
+                <Button
+                  type="button"
+                  className="min-h-[44px]"
+                  disabled={saving}
+                  onClick={doSaveAll}
+                >
+                  {lang === "fil" ? "I-save" : "Save"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
   );
 };
